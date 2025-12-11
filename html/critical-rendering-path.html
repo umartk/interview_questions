@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Critical Rendering Path - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; border-bottom: 2px solid #3498db; padding-bottom: 0.5rem; }
+        h3 { color: #2980b9; margin: 1.5rem 0 0.5rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .diagram {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+        .step {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .step-number {
+            background: #3498db;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+        }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Index</a>
+    
+    <h1>🎨 Critical Rendering Path</h1>
+    <p>Understanding how browsers convert HTML, CSS, and JavaScript into pixels on screen.</p>
+
+    <!--
+    =========================================================================
+    CRITICAL RENDERING PATH - Overview
+    =========================================================================
+    
+    The Critical Rendering Path (CRP) is the sequence of steps the browser
+    takes to convert HTML, CSS, and JavaScript into pixels on the screen.
+    
+    STEPS:
+    1. Parse HTML → Build DOM
+    2. Parse CSS → Build CSSOM
+    3. Combine DOM + CSSOM → Render Tree
+    4. Layout (Reflow) → Calculate positions
+    5. Paint → Fill in pixels
+    6. Composite → Layer management
+    
+    OPTIMIZATION GOAL:
+    Minimize the time and resources needed for the first render.
+    -->
+
+    <h2>The Rendering Pipeline</h2>
+    <div class="diagram">
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        CRITICAL RENDERING PATH                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+  HTML                CSS                 JavaScript
+   │                   │                      │
+   ▼                   ▼                      │
+┌──────┐          ┌──────┐                    │
+│ DOM  │          │CSSOM │                    │
+│ Tree │          │ Tree │                    │
+└──┬───┘          └──┬───┘                    │
+   │                 │                        │
+   └────────┬────────┘                        │
+            │                                 │
+            ▼                                 │
+      ┌───────────┐                           │
+      │  Render   │ ◄─────────────────────────┘
+      │   Tree    │   (JS can modify DOM/CSSOM)
+      └─────┬─────┘
+            │
+            ▼
+      ┌───────────┐
+      │  Layout   │  Calculate size and position
+      │ (Reflow)  │
+      └─────┬─────┘
+            │
+            ▼
+      ┌───────────┐
+      │   Paint   │  Fill in pixels
+      └─────┬─────┘
+            │
+            ▼
+      ┌───────────┐
+      │ Composite │  Combine layers
+      └─────┬─────┘
+            │
+            ▼
+        ┌───────┐
+        │ PIXELS│  → Screen
+        └───────┘
+    </div>
+
+    <h2>Step-by-Step Breakdown</h2>
+
+    <div class="step">
+        <h3><span class="step-number">1</span> DOM Construction</h3>
+        <p>Browser parses HTML and builds the Document Object Model (DOM) tree.</p>
+        <pre>
+&lt;!-- HTML --&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Page&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div&gt;
+      &lt;p&gt;Hello&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+
+/* DOM Tree */
+Document
+└── html
+    ├── head
+    │   └── title
+    │       └── "Page"
+    └── body
+        └── div
+            └── p
+                └── "Hello"
+        </pre>
+        <p><strong>Key Point:</strong> DOM construction is incremental - browser doesn't wait for entire HTML.</p>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">2</span> CSSOM Construction</h3>
+        <p>Browser parses CSS and builds the CSS Object Model (CSSOM) tree.</p>
+        <pre>
+/* CSS */
+body { font-size: 16px; }
+div { color: blue; }
+p { font-weight: bold; }
+
+/* CSSOM Tree */
+body
+├── font-size: 16px
+└── div
+    ├── color: blue
+    └── p
+        └── font-weight: bold
+        </pre>
+        <div class="warning">
+            <strong>⚠️ CSS is Render-Blocking!</strong>
+            <p>Browser won't render until CSSOM is complete. This prevents FOUC (Flash of Unstyled Content).</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">3</span> Render Tree Construction</h3>
+        <p>Combines DOM and CSSOM to create the Render Tree (only visible elements).</p>
+        <pre>
+/* Render Tree includes: */
+- Visible DOM nodes
+- Computed styles for each node
+
+/* Render Tree excludes: */
+- &lt;head&gt;, &lt;script&gt;, &lt;meta&gt; tags
+- Elements with display: none
+- Elements hidden by CSS
+
+/* Example */
+&lt;div style="display: none"&gt;Hidden&lt;/div&gt;  // NOT in render tree
+&lt;div style="visibility: hidden"&gt;Invisible&lt;/div&gt;  // IN render tree (takes space)
+        </pre>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">4</span> Layout (Reflow)</h3>
+        <p>Calculates the exact position and size of each element.</p>
+        <pre>
+/* Layout calculates: */
+- Width and height of each element
+- Position (x, y coordinates)
+- Relative to viewport and other elements
+
+/* Triggers Layout (expensive!): */
+- Reading offsetWidth, offsetHeight
+- Reading scrollTop, scrollLeft
+- Reading clientWidth, clientHeight
+- Changing width, height, padding, margin
+- Changing font-size, font-family
+- Adding/removing DOM elements
+        </pre>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">5</span> Paint</h3>
+        <p>Fills in pixels for each element (colors, borders, shadows, text).</p>
+        <pre>
+/* Paint operations: */
+- Background colors
+- Background images
+- Borders
+- Shadows
+- Text
+- Outlines
+
+/* Triggers Paint (less expensive than layout): */
+- Changing color, background-color
+- Changing visibility
+- Changing box-shadow
+        </pre>
+    </div>
+
+    <div class="step">
+        <h3><span class="step-number">6</span> Composite</h3>
+        <p>Combines painted layers in the correct order.</p>
+        <pre>
+/* Layers are created for: */
+- Elements with transform or opacity
+- Elements with position: fixed
+- Elements with will-change
+- &lt;video&gt;, &lt;canvas&gt; elements
+
+/* Composite-only properties (cheapest!): */
+- transform
+- opacity
+
+/* These don't trigger layout or paint! */
+.element {
+    transform: translateX(100px);  /* Composite only */
+    opacity: 0.5;                   /* Composite only */
+}
+        </pre>
+    </div>
+
+    <h2>Render-Blocking Resources</h2>
+    <pre>
+/**
+ * RENDER-BLOCKING RESOURCES
+ * 
+ * These block the first render of the page.
+ */
+
+// CSS is render-blocking by default
+&lt;link rel="stylesheet" href="styles.css"&gt;
+
+// Make CSS non-blocking with media queries
+&lt;link rel="stylesheet" href="print.css" media="print"&gt;
+&lt;link rel="stylesheet" href="mobile.css" media="(max-width: 600px)"&gt;
+
+// JavaScript is parser-blocking by default
+&lt;script src="app.js"&gt;&lt;/script&gt;
+
+// Make JS non-blocking with async or defer
+&lt;script src="analytics.js" async&gt;&lt;/script&gt;  // Download async, execute ASAP
+&lt;script src="app.js" defer&gt;&lt;/script&gt;         // Download async, execute after HTML parsed
+    </pre>
+
+    <h3>async vs defer</h3>
+    <div class="diagram">
+NORMAL &lt;script&gt;:
+HTML: ────────█████████████████████████████████────────────────────
+JS:           ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+              │ download │    execute    │
+              └──────────┴───────────────┘
+              HTML parsing BLOCKED
+
+ASYNC &lt;script&gt;:
+HTML: ────────────────────────────────────█████████████────────────
+JS:           ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+              │    download    │ execute │
+              └────────────────┴─────────┘
+              Executes as soon as downloaded (may interrupt HTML)
+
+DEFER &lt;script&gt;:
+HTML: ────────────────────────────────────────────────────█████████
+JS:           ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+              │         download         │     execute     │
+              └──────────────────────────┴─────────────────┘
+              Executes after HTML is fully parsed
+    </div>
+
+    <h2>Optimization Strategies</h2>
+    <pre>
+/**
+ * CRITICAL RENDERING PATH OPTIMIZATION
+ */
+
+// 1. MINIMIZE CRITICAL RESOURCES
+// Inline critical CSS
+&lt;style&gt;
+    /* Only above-the-fold styles */
+    .header { ... }
+    .hero { ... }
+&lt;/style&gt;
+
+// Load non-critical CSS asynchronously
+&lt;link rel="preload" href="styles.css" as="style" onload="this.rel='stylesheet'"&gt;
+
+// 2. MINIMIZE CRITICAL PATH LENGTH
+// Reduce number of round trips
+// Use HTTP/2 for multiplexing
+// Preconnect to required origins
+&lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;
+
+// 3. MINIMIZE CRITICAL BYTES
+// Minify CSS and JavaScript
+// Compress with gzip/brotli
+// Remove unused CSS (PurgeCSS)
+
+// 4. OPTIMIZE JAVASCRIPT LOADING
+&lt;script src="critical.js"&gt;&lt;/script&gt;  // Only truly critical JS
+&lt;script src="app.js" defer&gt;&lt;/script&gt;  // Main app code
+&lt;script src="analytics.js" async&gt;&lt;/script&gt;  // Independent scripts
+
+// 5. PRELOAD CRITICAL RESOURCES
+&lt;link rel="preload" href="hero.jpg" as="image"&gt;
+&lt;link rel="preload" href="font.woff2" as="font" crossorigin&gt;
+
+// 6. USE RESOURCE HINTS
+&lt;link rel="dns-prefetch" href="https://api.example.com"&gt;
+&lt;link rel="preconnect" href="https://cdn.example.com"&gt;
+&lt;link rel="prefetch" href="next-page.html"&gt;
+    </pre>
+
+    <h2>Avoiding Layout Thrashing</h2>
+    <pre>
+/**
+ * LAYOUT THRASHING
+ * 
+ * Occurs when you read layout properties and then write,
+ * forcing the browser to recalculate layout multiple times.
+ */
+
+// BAD: Layout thrashing (read-write-read-write)
+elements.forEach(el => {
+    const height = el.offsetHeight;  // READ - forces layout
+    el.style.height = height + 10 + 'px';  // WRITE - invalidates layout
+});
+// Each iteration forces a new layout calculation!
+
+// GOOD: Batch reads, then batch writes
+const heights = elements.map(el => el.offsetHeight);  // All READs
+elements.forEach((el, i) => {
+    el.style.height = heights[i] + 10 + 'px';  // All WRITEs
+});
+// Only one layout calculation!
+
+// BETTER: Use requestAnimationFrame
+function updateElements() {
+    // Batch all DOM reads
+    const measurements = elements.map(el => el.offsetHeight);
+    
+    // Batch all DOM writes in next frame
+    requestAnimationFrame(() => {
+        elements.forEach((el, i) => {
+            el.style.height = measurements[i] + 10 + 'px';
+        });
+    });
+}
+
+// BEST: Use CSS transforms (no layout!)
+element.style.transform = 'translateY(10px)';  // Composite only
+    </pre>
+
+    <h2>Performance Properties Cheat Sheet</h2>
+    <div class="diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                    PROPERTY COST COMPARISON                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  LAYOUT + PAINT + COMPOSITE (Most Expensive)                    │
+│  ─────────────────────────────────────────────                  │
+│  width, height, padding, margin, border                         │
+│  top, left, right, bottom                                       │
+│  font-size, font-family, line-height                            │
+│  display, position, float                                       │
+│                                                                  │
+│  PAINT + COMPOSITE (Medium)                                     │
+│  ─────────────────────────────                                  │
+│  color, background-color, background-image                      │
+│  border-color, border-style                                     │
+│  box-shadow, text-shadow                                        │
+│  visibility                                                      │
+│                                                                  │
+│  COMPOSITE ONLY (Cheapest - Use These!)                         │
+│  ──────────────────────────────────────                         │
+│  transform                                                       │
+│  opacity                                                         │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+    </div>
+
+    <div class="tip">
+        <h3>🎤 Interview Tips</h3>
+        <ul>
+            <li><strong>Know the steps:</strong> DOM → CSSOM → Render Tree → Layout → Paint → Composite</li>
+            <li><strong>Understand blocking:</strong> CSS blocks render, JS blocks parsing</li>
+            <li><strong>async vs defer:</strong> async executes immediately, defer waits for HTML</li>
+            <li><strong>Layout thrashing:</strong> Batch reads and writes separately</li>
+            <li><strong>Cheap animations:</strong> Use transform and opacity only</li>
+        </ul>
+    </div>
+</body>
+</html>

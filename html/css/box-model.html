@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Box Model - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .diagram {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .box-demo {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Index</a>
+    
+    <h1>📦 CSS Box Model</h1>
+    <p>Understanding how elements are sized and spaced in CSS.</p>
+
+    <h2>The Box Model</h2>
+    <div class="diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                           MARGIN                                 │
+│   ┌─────────────────────────────────────────────────────────┐   │
+│   │                        BORDER                            │   │
+│   │   ┌─────────────────────────────────────────────────┐   │   │
+│   │   │                    PADDING                       │   │   │
+│   │   │   ┌─────────────────────────────────────────┐   │   │   │
+│   │   │   │                                         │   │   │   │
+│   │   │   │              CONTENT                    │   │   │   │
+│   │   │   │           (width × height)              │   │   │   │
+│   │   │   │                                         │   │   │   │
+│   │   │   └─────────────────────────────────────────┘   │   │   │
+│   │   │                                                  │   │   │
+│   │   └─────────────────────────────────────────────────┘   │   │
+│   │                                                          │   │
+│   └─────────────────────────────────────────────────────────┘   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+
+TOTAL WIDTH = margin-left + border-left + padding-left + width 
+            + padding-right + border-right + margin-right
+    </div>
+
+    <h2>box-sizing Property</h2>
+    <pre>
+/**
+ * BOX-SIZING
+ * 
+ * Controls how width and height are calculated.
+ */
+
+/* content-box (DEFAULT) */
+.element {
+    box-sizing: content-box;
+    width: 200px;
+    padding: 20px;
+    border: 5px solid black;
+}
+/* Total width = 200 + 20 + 20 + 5 + 5 = 250px */
+
+/* border-box (RECOMMENDED) */
+.element {
+    box-sizing: border-box;
+    width: 200px;
+    padding: 20px;
+    border: 5px solid black;
+}
+/* Total width = 200px (padding and border included) */
+/* Content width = 200 - 20 - 20 - 5 - 5 = 150px */
+
+/* Best practice: Apply to all elements */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+    </pre>
+
+    <h2>Margin</h2>
+    <pre>
+/**
+ * MARGIN - Space OUTSIDE the element
+ */
+
+.element {
+    margin: 10px;                    /* All sides */
+    margin: 10px 20px;               /* Vertical | Horizontal */
+    margin: 10px 20px 30px;          /* Top | Horizontal | Bottom */
+    margin: 10px 20px 30px 40px;     /* Top | Right | Bottom | Left */
+    
+    /* Individual sides */
+    margin-top: 10px;
+    margin-right: 20px;
+    margin-bottom: 30px;
+    margin-left: 40px;
+    
+    /* Auto margins for centering */
+    margin: 0 auto;  /* Center horizontally */
+    
+    /* Negative margins */
+    margin-top: -10px;  /* Pull element up */
+}
+
+/**
+ * MARGIN COLLAPSE
+ * 
+ * Vertical margins collapse (take the larger value).
+ * Horizontal margins do NOT collapse.
+ */
+
+/* Example: */
+.box1 { margin-bottom: 20px; }
+.box2 { margin-top: 30px; }
+/* Space between = 30px (not 50px!) */
+
+/* Margin collapse does NOT happen with: */
+/* - Flexbox items */
+/* - Grid items */
+/* - Floated elements */
+/* - Absolutely positioned elements */
+/* - Elements with overflow other than visible */
+    </pre>
+
+    <h2>Padding</h2>
+    <pre>
+/**
+ * PADDING - Space INSIDE the element (between content and border)
+ */
+
+.element {
+    padding: 10px;                   /* All sides */
+    padding: 10px 20px;              /* Vertical | Horizontal */
+    padding: 10px 20px 30px;         /* Top | Horizontal | Bottom */
+    padding: 10px 20px 30px 40px;    /* Top | Right | Bottom | Left */
+    
+    /* Individual sides */
+    padding-top: 10px;
+    padding-right: 20px;
+    padding-bottom: 30px;
+    padding-left: 40px;
+}
+
+/* Padding CANNOT be negative */
+/* Padding is included in background area */
+/* Padding does NOT collapse */
+    </pre>
+
+    <h2>Border</h2>
+    <pre>
+/**
+ * BORDER - Between padding and margin
+ */
+
+.element {
+    /* Shorthand */
+    border: 1px solid black;
+    
+    /* Individual properties */
+    border-width: 1px;
+    border-style: solid;  /* solid | dashed | dotted | double | none */
+    border-color: black;
+    
+    /* Individual sides */
+    border-top: 2px dashed red;
+    border-right: 3px solid blue;
+    border-bottom: 4px dotted green;
+    border-left: 5px double orange;
+    
+    /* Border radius */
+    border-radius: 10px;              /* All corners */
+    border-radius: 10px 20px;         /* TL+BR | TR+BL */
+    border-radius: 10px 20px 30px 40px; /* TL | TR | BR | BL */
+    border-radius: 50%;               /* Circle (if square) */
+}
+    </pre>
+
+    <h2>Width and Height</h2>
+    <pre>
+/**
+ * WIDTH AND HEIGHT
+ */
+
+.element {
+    /* Fixed size */
+    width: 200px;
+    height: 100px;
+    
+    /* Percentage (relative to parent) */
+    width: 50%;
+    height: 100%;  /* Needs parent height defined */
+    
+    /* Viewport units */
+    width: 100vw;   /* 100% of viewport width */
+    height: 100vh;  /* 100% of viewport height */
+    
+    /* Min/Max constraints */
+    min-width: 200px;
+    max-width: 800px;
+    min-height: 100px;
+    max-height: 500px;
+    
+    /* Auto (default) */
+    width: auto;   /* Shrink to content or expand to fill */
+    height: auto;  /* Shrink to content */
+    
+    /* fit-content */
+    width: fit-content;  /* Shrink to content, max at container */
+    
+    /* min-content / max-content */
+    width: min-content;  /* Smallest possible width */
+    width: max-content;  /* No wrapping, natural width */
+}
+    </pre>
+
+    <h2>Display Property</h2>
+    <pre>
+/**
+ * DISPLAY - How element participates in layout
+ */
+
+/* Block: Takes full width, starts on new line */
+display: block;
+/* Examples: div, p, h1-h6, section, article */
+
+/* Inline: Only takes content width, no width/height */
+display: inline;
+/* Examples: span, a, strong, em */
+
+/* Inline-block: Inline but respects width/height */
+display: inline-block;
+
+/* None: Removes from layout completely */
+display: none;
+
+/* Flex: Flexbox container */
+display: flex;
+
+/* Grid: Grid container */
+display: grid;
+
+/* Inline variants */
+display: inline-flex;
+display: inline-grid;
+    </pre>
+
+    <h2>Overflow</h2>
+    <pre>
+/**
+ * OVERFLOW - What happens when content exceeds container
+ */
+
+.element {
+    overflow: visible;  /* Default - content overflows */
+    overflow: hidden;   /* Clip content */
+    overflow: scroll;   /* Always show scrollbars */
+    overflow: auto;     /* Scrollbars only when needed */
+    
+    /* Individual axes */
+    overflow-x: hidden;
+    overflow-y: auto;
+    
+    /* Text overflow */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;  /* Shows "..." */
+}
+    </pre>
+
+    <div class="tip">
+        <h3>🎤 Interview Questions</h3>
+        <ul>
+            <li><strong>What is box-sizing: border-box?</strong> Width/height includes padding and border</li>
+            <li><strong>What is margin collapse?</strong> Adjacent vertical margins combine (take larger value)</li>
+            <li><strong>Difference between margin and padding?</strong> Margin is outside, padding is inside the border</li>
+            <li><strong>Block vs inline elements?</strong> Block takes full width, inline only content width</li>
+            <li><strong>How to center a div?</strong> margin: 0 auto (needs width), or flexbox/grid</li>
+        </ul>
+    </div>
+</body>
+</html>

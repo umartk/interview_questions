@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promises & Async/Await - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; }
+        h3 { color: #2980b9; margin: 1.5rem 0 0.5rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .output {
+            background: #1a1a2e;
+            color: #00ff00;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 1rem 0;
+            min-height: 50px;
+        }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        button:hover { background: #2980b9; }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Index</a>
+    
+    <h1>🔄 Promises & Async/Await</h1>
+    <p>Mastering asynchronous JavaScript programming.</p>
+
+    <h2>Promise Basics</h2>
+    <pre>
+/**
+ * PROMISE STATES
+ * 
+ * A Promise is in one of three states:
+ * - pending: Initial state, neither fulfilled nor rejected
+ * - fulfilled: Operation completed successfully
+ * - rejected: Operation failed
+ * 
+ * Once settled (fulfilled or rejected), a promise cannot change state.
+ */
+
+// Creating a Promise
+const promise = new Promise((resolve, reject) => {
+    // Async operation
+    setTimeout(() => {
+        const success = true;
+        if (success) {
+            resolve('Data loaded!');  // Fulfill the promise
+        } else {
+            reject(new Error('Failed to load'));  // Reject the promise
+        }
+    }, 1000);
+});
+
+// Consuming a Promise
+promise
+    .then(result => console.log(result))   // Handle success
+    .catch(error => console.error(error))  // Handle error
+    .finally(() => console.log('Done'));   // Always runs
+    </pre>
+
+    <h2>Promise Chaining</h2>
+    <pre>
+/**
+ * PROMISE CHAINING
+ * 
+ * .then() returns a new Promise, enabling chaining.
+ * Each .then() receives the return value of the previous one.
+ */
+
+fetch('/api/user')
+    .then(response => response.json())  // Returns Promise
+    .then(user => fetch(`/api/posts/${user.id}`))  // Returns Promise
+    .then(response => response.json())
+    .then(posts => console.log(posts))
+    .catch(error => console.error('Error:', error));  // Catches any error in chain
+
+// Returning values in chain
+Promise.resolve(1)
+    .then(x => x + 1)      // Returns 2
+    .then(x => x * 2)      // Returns 4
+    .then(x => console.log(x));  // Logs: 4
+
+// Returning Promises in chain
+Promise.resolve(1)
+    .then(x => Promise.resolve(x + 1))  // Returns Promise that resolves to 2
+    .then(x => console.log(x));  // Logs: 2
+    </pre>
+    <button onclick="runChaining()">Run Example</button>
+    <div id="output1" class="output"></div>
+
+    <h2>Promise Static Methods</h2>
+    <pre>
+/**
+ * Promise.all() - Wait for ALL promises
+ * Rejects if ANY promise rejects
+ */
+const promises = [
+    fetch('/api/users'),
+    fetch('/api/posts'),
+    fetch('/api/comments')
+];
+
+Promise.all(promises)
+    .then(responses => Promise.all(responses.map(r => r.json())))
+    .then(([users, posts, comments]) => {
+        console.log(users, posts, comments);
+    })
+    .catch(error => console.error('One failed:', error));
+
+/**
+ * Promise.allSettled() - Wait for ALL to settle
+ * Never rejects, returns status of each promise
+ */
+Promise.allSettled(promises)
+    .then(results => {
+        results.forEach(result => {
+            if (result.status === 'fulfilled') {
+                console.log('Success:', result.value);
+            } else {
+                console.log('Failed:', result.reason);
+            }
+        });
+    });
+
+/**
+ * Promise.race() - First to settle wins
+ * Resolves/rejects with first settled promise
+ */
+Promise.race([
+    fetch('/api/fast'),
+    new Promise((_, reject) => 
+        setTimeout(() => reject('Timeout'), 5000)
+    )
+]).then(response => console.log('Got response'))
+  .catch(error => console.log('Timeout or error'));
+
+/**
+ * Promise.any() - First to FULFILL wins
+ * Only rejects if ALL promises reject
+ */
+Promise.any([
+    fetch('/api/server1'),
+    fetch('/api/server2'),
+    fetch('/api/server3')
+]).then(response => console.log('First success:', response));
+    </pre>
+    <button onclick="runPromiseMethods()">Run Example</button>
+    <div id="output2" class="output"></div>
+
+    <h2>Async/Await</h2>
+    <pre>
+/**
+ * ASYNC/AWAIT
+ * 
+ * Syntactic sugar over Promises.
+ * Makes async code look synchronous.
+ * 
+ * - async function always returns a Promise
+ * - await pauses execution until Promise settles
+ * - await can only be used inside async function
+ */
+
+// Promise version
+function fetchUser() {
+    return fetch('/api/user')
+        .then(response => response.json())
+        .then(user => {
+            console.log(user);
+            return user;
+        });
+}
+
+// Async/await version (cleaner!)
+async function fetchUserAsync() {
+    const response = await fetch('/api/user');
+    const user = await response.json();
+    console.log(user);
+    return user;
+}
+
+// Error handling with try/catch
+async function fetchWithErrorHandling() {
+    try {
+        const response = await fetch('/api/user');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const user = await response.json();
+        return user;
+    } catch (error) {
+        console.error('Fetch failed:', error);
+        throw error;  // Re-throw if needed
+    }
+}
+    </pre>
+
+    <h2>Common Patterns</h2>
+    <pre>
+/**
+ * PARALLEL EXECUTION
+ * 
+ * Don't await in sequence if operations are independent!
+ */
+
+// BAD: Sequential (slow)
+async function fetchSequential() {
+    const users = await fetch('/api/users');    // Wait...
+    const posts = await fetch('/api/posts');    // Then wait...
+    const comments = await fetch('/api/comments');  // Then wait...
+    // Total time: users + posts + comments
+}
+
+// GOOD: Parallel (fast)
+async function fetchParallel() {
+    const [users, posts, comments] = await Promise.all([
+        fetch('/api/users'),
+        fetch('/api/posts'),
+        fetch('/api/comments')
+    ]);
+    // Total time: max(users, posts, comments)
+}
+
+/**
+ * SEQUENTIAL WHEN NEEDED
+ * 
+ * When each request depends on the previous result
+ */
+async function fetchSequentialNeeded() {
+    const user = await fetch('/api/user').then(r => r.json());
+    const posts = await fetch(`/api/posts/${user.id}`).then(r => r.json());
+    const comments = await fetch(`/api/comments/${posts[0].id}`).then(r => r.json());
+    return { user, posts, comments };
+}
+
+/**
+ * LOOP WITH ASYNC/AWAIT
+ */
+
+// Sequential processing
+async function processSequential(items) {
+    for (const item of items) {
+        await processItem(item);  // One at a time
+    }
+}
+
+// Parallel processing
+async function processParallel(items) {
+    await Promise.all(items.map(item => processItem(item)));  // All at once
+}
+
+// Controlled concurrency (batch processing)
+async function processBatched(items, batchSize = 3) {
+    for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        await Promise.all(batch.map(item => processItem(item)));
+    }
+}
+    </pre>
+    <button onclick="runPatterns()">Run Example</button>
+    <div id="output3" class="output"></div>
+
+    <h2>Error Handling Patterns</h2>
+    <pre>
+/**
+ * ERROR HANDLING BEST PRACTICES
+ */
+
+// 1. Centralized error handling
+async function fetchWithHandler(url) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        // Log, report to monitoring service
+        console.error(`Fetch error for ${url}:`, error);
+        throw error;  // Re-throw for caller to handle
+    }
+}
+
+// 2. Default values on error
+async function fetchWithDefault(url, defaultValue) {
+    try {
+        return await fetch(url).then(r => r.json());
+    } catch {
+        return defaultValue;
+    }
+}
+
+// 3. Retry logic
+async function fetchWithRetry(url, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fetch(url).then(r => r.json());
+        } catch (error) {
+            if (i === retries - 1) throw error;
+            await new Promise(r => setTimeout(r, 1000 * (i + 1)));  // Exponential backoff
+        }
+    }
+}
+
+// 4. Timeout wrapper
+function withTimeout(promise, ms) {
+    const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), ms)
+    );
+    return Promise.race([promise, timeout]);
+}
+
+// Usage
+const data = await withTimeout(fetch('/api/data'), 5000);
+    </pre>
+
+    <div class="tip">
+        <h3>🎤 Interview Questions</h3>
+        <ul>
+            <li><strong>What are the three states of a Promise?</strong> pending, fulfilled, rejected</li>
+            <li><strong>Difference between Promise.all and Promise.allSettled?</strong> all rejects on first failure, allSettled waits for all</li>
+            <li><strong>What does async function return?</strong> Always returns a Promise</li>
+            <li><strong>Can you use await outside async function?</strong> Only at top-level in ES modules</li>
+            <li><strong>How to run promises in parallel?</strong> Promise.all() or start all before awaiting</li>
+        </ul>
+    </div>
+
+    <script>
+        function log(outputId, ...args) {
+            const output = document.getElementById(outputId);
+            output.innerHTML += args.join(' ') + '\n';
+        }
+
+        function runChaining() {
+            document.getElementById('output1').innerHTML = '';
+            Promise.resolve(1)
+                .then(x => { log('output1', 'Step 1:', x); return x + 1; })
+                .then(x => { log('output1', 'Step 2:', x); return x * 2; })
+                .then(x => { log('output1', 'Step 3:', x); return x + 10; })
+                .then(x => log('output1', 'Final:', x));
+        }
+
+        function runPromiseMethods() {
+            document.getElementById('output2').innerHTML = '';
+            
+            const p1 = new Promise(r => setTimeout(() => r('First'), 100));
+            const p2 = new Promise(r => setTimeout(() => r('Second'), 200));
+            const p3 = new Promise((_, reject) => setTimeout(() => reject('Third failed'), 150));
+
+            Promise.allSettled([p1, p2, p3]).then(results => {
+                results.forEach((result, i) => {
+                    log('output2', `Promise ${i + 1}:`, result.status, result.value || result.reason);
+                });
+            });
+        }
+
+        async function runPatterns() {
+            document.getElementById('output3').innerHTML = '';
+            
+            const delay = (ms, val) => new Promise(r => setTimeout(() => r(val), ms));
+            
+            log('output3', 'Starting parallel execution...');
+            const start = Date.now();
+            
+            const [a, b, c] = await Promise.all([
+                delay(100, 'A'),
+                delay(200, 'B'),
+                delay(150, 'C')
+            ]);
+            
+            log('output3', `Results: ${a}, ${b}, ${c}`);
+            log('output3', `Time: ${Date.now() - start}ms (parallel)`);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debounce & Throttle - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; border-bottom: 2px solid #3498db; padding-bottom: 0.5rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .demo {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .demo input {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+        .counter {
+            font-family: monospace;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 0.25rem;
+        }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+        .diagram {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Index</a>
+    
+    <h1>⏱️ Debounce & Throttle</h1>
+    <p>Rate-limiting techniques for optimizing event handlers.</p>
+
+    <
+h2>Visual Comparison</h2>
+    <div class="diagram">
+Events:     ●  ●  ●  ●  ●  ●  ●  ●  ●  ●        ●  ●  ●
+            |  |  |  |  |  |  |  |  |  |        |  |  |
+            
+Normal:     ●  ●  ●  ●  ●  ●  ●  ●  ●  ●        ●  ●  ●
+            (Every event triggers handler - 13 calls)
+
+Debounce:                              ●                 ●
+            (Only fires after events stop - 2 calls)
+            
+Throttle:   ●        ●        ●        ●        ●     ●
+            (Fires at regular intervals - 6 calls)
+    </div>
+
+    <h2>Debounce Implementation</h2>
+    <pre>
+/**
+ * DEBOUNCE
+ * 
+ * Delays execution until after a period of inactivity.
+ * The function only runs ONCE after events stop.
+ * 
+ * USE CASES:
+ * - Search input (wait for user to stop typing)
+ * - Window resize (recalculate after resize ends)
+ * - Auto-save (save after user stops editing)
+ * - Form validation (validate after input complete)
+ */
+
+function debounce(func, delay) {
+    let timeoutId;
+    
+    return function(...args) {
+        // Clear previous timeout
+        clearTimeout(timeoutId);
+        
+        // Set new timeout
+        timeoutId = setTimeout(() => {
+            func.apply(this, args);
+        }, delay);
+    };
+}
+
+// Usage
+const debouncedSearch = debounce((query) => {
+    console.log('Searching for:', query);
+    // API call here
+}, 300);
+
+input.addEventListener('input', (e) => {
+    debouncedSearch(e.target.value);
+});
+
+/**
+ * DEBOUNCE WITH IMMEDIATE OPTION
+ * 
+ * Optionally fire on the leading edge instead of trailing.
+ */
+function debounceAdvanced(func, delay, immediate = false) {
+    let timeoutId;
+    
+    return function(...args) {
+        const callNow = immediate && !timeoutId;
+        
+        clearTimeout(timeoutId);
+        
+        timeoutId = setTimeout(() => {
+            timeoutId = null;
+            if (!immediate) {
+                func.apply(this, args);
+            }
+        }, delay);
+        
+        if (callNow) {
+            func.apply(this, args);
+        }
+    };
+}
+
+// Fire immediately, then debounce subsequent calls
+const debouncedClick = debounceAdvanced(handleClick, 300, true);
+    </pre>
+
+    <h2>Throttle Implementation</h2>
+    <pre>
+/**
+ * THROTTLE
+ * 
+ * Limits execution to once per specified time period.
+ * Ensures function runs at regular intervals during continuous events.
+ * 
+ * USE CASES:
+ * - Scroll events (infinite scroll, parallax)
+ * - Mouse move (drag and drop, drawing)
+ * - Window resize (during resize, not just after)
+ * - Game loops (consistent frame rate)
+ * - API rate limiting
+ */
+
+function throttle(func, limit) {
+    let inThrottle = false;
+    
+    return function(...args) {
+        if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            
+            setTimeout(() => {
+                inThrottle = false;
+            }, limit);
+        }
+    };
+}
+
+// Usage
+const throttledScroll = throttle(() => {
+    console.log('Scroll position:', window.scrollY);
+}, 100);
+
+window.addEventListener('scroll', throttledScroll);
+
+/**
+ * THROTTLE WITH TRAILING CALL
+ * 
+ * Ensures the last call is always executed.
+ */
+function throttleWithTrailing(func, limit) {
+    let lastCall = 0;
+    let lastArgs = null;
+    let timeoutId = null;
+    
+    return function(...args) {
+        const now = Date.now();
+        const remaining = limit - (now - lastCall);
+        
+        lastArgs = args;
+        
+        if (remaining <= 0) {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+            lastCall = now;
+            func.apply(this, args);
+        } else if (!timeoutId) {
+            timeoutId = setTimeout(() => {
+                lastCall = Date.now();
+                timeoutId = null;
+                func.apply(this, lastArgs);
+            }, remaining);
+        }
+    };
+}
+    </pre>
+
+    <h2>When to Use Which?</h2>
+    <pre>
+/**
+ * DEBOUNCE vs THROTTLE - Decision Guide
+ * 
+ * DEBOUNCE when:
+ * - You only care about the FINAL state
+ * - User input that triggers expensive operations
+ * - You want to wait for a "pause" in activity
+ * 
+ * Examples:
+ * - Search suggestions (wait for typing to stop)
+ * - Form validation (validate after field complete)
+ * - Auto-save (save after editing stops)
+ * - Window resize end detection
+ * 
+ * THROTTLE when:
+ * - You need REGULAR updates during continuous events
+ * - You want to limit frequency but not miss updates
+ * - Real-time feedback is important
+ * 
+ * Examples:
+ * - Scroll position tracking
+ * - Mouse position for drag/drop
+ * - Game input handling
+ * - Progress indicators
+ * - Infinite scroll loading
+ */
+    </pre>
+
+    <h2>Live Demo</h2>
+    <div class="demo">
+        <h3>Type in the input to see the difference:</h3>
+        <input type="text" id="demoInput" placeholder="Type something...">
+        
+        <p>
+            <span class="counter">Normal: <span id="normalCount">0</span></span>
+            <span class="counter">Debounced (300ms): <span id="debounceCount">0</span></span>
+            <span class="counter">Throttled (300ms): <span id="throttleCount">0</span></span>
+        </p>
+        
+        <p style="margin-top: 1rem; color: #666;">
+            Normal fires on every keystroke. Debounce waits for you to stop typing. 
+            Throttle fires at most once every 300ms.
+        </p>
+    </div>
+
+    <div class="tip">
+        <h3>🎤 Interview Questions</h3>
+        <ul>
+            <li><strong>Difference between debounce and throttle?</strong> Debounce waits for inactivity, throttle limits frequency</li>
+            <li><strong>When to use debounce?</strong> Search input, form validation, auto-save, resize end</li>
+            <li><strong>When to use throttle?</strong> Scroll events, mouse move, game loops, API rate limiting</li>
+            <li><strong>Implement debounce from scratch</strong> Use setTimeout and clearTimeout</li>
+            <li><strong>What is leading vs trailing edge?</strong> Leading fires immediately, trailing fires after delay</li>
+        </ul>
+    </div>
+
+    <script>
+        // Debounce implementation
+        function debounce(func, delay) {
+            let timeoutId;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Throttle implementation
+        function throttle(func, limit) {
+            let inThrottle = false;
+            return function(...args) {
+                if (!inThrottle) {
+                    func.apply(this, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        }
+
+        // Demo
+        let normalCount = 0;
+        let debounceCount = 0;
+        let throttleCount = 0;
+
+        const updateNormal = () => {
+            document.getElementById('normalCount').textContent = ++normalCount;
+        };
+
+        const updateDebounce = debounce(() => {
+            document.getElementById('debounceCount').textContent = ++debounceCount;
+        }, 300);
+
+        const updateThrottle = throttle(() => {
+            document.getElementById('throttleCount').textContent = ++throttleCount;
+        }, 300);
+
+        document.getElementById('demoInput').addEventListener('input', () => {
+            updateNormal();
+            updateDebounce();
+            updateThrottle();
+        });
+    </script>
+</body>
+</html>

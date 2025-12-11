@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Hoisting - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; }
+        h3 { color: #2980b9; margin: 1.5rem 0 0.5rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .comparison > div {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .comparison h4 {
+            margin-bottom: 0.5rem;
+            color: #2980b9;
+        }
+        .error { color: #e74c3c; }
+        .success { color: #27ae60; }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        th { background: #f8f9fa; }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Index</a>
+    
+    <h1>🏗️ JavaScript Hoisting</h1>
+    <p>Understanding how JavaScript moves declarations to the top of their scope.</p>
+
+    <!--
+    =========================================================================
+    HOISTING - Core Concept
+    =========================================================================
+    
+    Hoisting is JavaScript's behavior of moving DECLARATIONS (not initializations)
+    to the top of their scope during the compilation phase.
+    
+    KEY POINTS:
+    
+    1. var declarations are hoisted and initialized with undefined
+    2. let/const declarations are hoisted but NOT initialized (TDZ)
+    3. Function declarations are fully hoisted (name + body)
+    4. Function expressions are NOT hoisted (treated as variables)
+    5. Class declarations are NOT hoisted (like let/const)
+    
+    TEMPORAL DEAD ZONE (TDZ):
+    The time between entering scope and variable declaration where
+    accessing let/const throws ReferenceError.
+    -->
+
+    <h2>Quick Reference Table</h2>
+    <table>
+        <tr>
+            <th>Declaration Type</th>
+            <th>Hoisted?</th>
+            <th>Initialized?</th>
+            <th>Access Before Declaration</th>
+        </tr>
+        <tr>
+            <td><code>var</code></td>
+            <td class="success">Yes</td>
+            <td>Yes (undefined)</td>
+            <td>Returns <code>undefined</code></td>
+        </tr>
+        <tr>
+            <td><code>let</code></td>
+            <td class="success">Yes</td>
+            <td class="error">No (TDZ)</td>
+            <td class="error">ReferenceError</td>
+        </tr>
+        <tr>
+            <td><code>const</code></td>
+            <td class="success">Yes</td>
+            <td class="error">No (TDZ)</td>
+            <td class="error">ReferenceError</td>
+        </tr>
+        <tr>
+            <td>Function Declaration</td>
+            <td class="success">Yes (fully)</td>
+            <td class="success">Yes</td>
+            <td class="success">Works!</td>
+        </tr>
+        <tr>
+            <td>Function Expression</td>
+            <td>As variable</td>
+            <td>As variable</td>
+            <td>Depends on var/let/const</td>
+        </tr>
+        <tr>
+            <td>Class Declaration</td>
+            <td class="success">Yes</td>
+            <td class="error">No (TDZ)</td>
+            <td class="error">ReferenceError</td>
+        </tr>
+    </table>
+
+    <h2>1. var Hoisting</h2>
+    <pre>
+/**
+ * VAR HOISTING
+ * 
+ * var declarations are hoisted to the top of their function scope
+ * and initialized with undefined.
+ */
+
+// What you write:
+console.log(x);  // undefined (not ReferenceError!)
+var x = 5;
+console.log(x);  // 5
+
+// How JavaScript interprets it:
+var x;           // Declaration hoisted
+console.log(x);  // undefined
+x = 5;           // Assignment stays in place
+console.log(x);  // 5
+
+// ============================================
+
+// var is FUNCTION-SCOPED, not block-scoped
+function example() {
+    console.log(a);  // undefined
+    
+    if (true) {
+        var a = 10;  // Hoisted to function top
+    }
+    
+    console.log(a);  // 10 (accessible outside if block!)
+}
+
+// ============================================
+
+// Classic interview gotcha: var in loops
+for (var i = 0; i < 3; i++) {
+    setTimeout(() => console.log(i), 100);
+}
+// Output: 3, 3, 3 (not 0, 1, 2!)
+// Because var is function-scoped, same 'i' is shared
+    </pre>
+
+    <h2>2. let and const Hoisting (Temporal Dead Zone)</h2>
+    <pre>
+/**
+ * LET/CONST HOISTING - Temporal Dead Zone (TDZ)
+ * 
+ * let and const ARE hoisted, but they're not initialized.
+ * Accessing them before declaration throws ReferenceError.
+ * 
+ * TDZ = Time between entering scope and declaration
+ */
+
+// What you write:
+console.log(x);  // ReferenceError: Cannot access 'x' before initialization
+let x = 5;
+
+// How JavaScript interprets it:
+// x is hoisted but in TDZ
+// TDZ starts here ─────────────────┐
+console.log(x);  // ReferenceError  │ TDZ
+let x = 5;       // TDZ ends here ──┘
+console.log(x);  // 5
+
+// ============================================
+
+// let/const are BLOCK-SCOPED
+function example() {
+    // console.log(a);  // ReferenceError (TDZ)
+    
+    if (true) {
+        // console.log(a);  // Still ReferenceError (TDZ)
+        let a = 10;
+        console.log(a);  // 10
+    }
+    
+    // console.log(a);  // ReferenceError (out of scope)
+}
+
+// ============================================
+
+// Fix for the loop problem:
+for (let i = 0; i < 3; i++) {
+    setTimeout(() => console.log(i), 100);
+}
+// Output: 0, 1, 2 (correct!)
+// Each iteration gets its own 'i' binding
+
+// ============================================
+
+// const must be initialized at declaration
+const y;  // SyntaxError: Missing initializer
+const y = 5;  // Correct
+    </pre>
+
+    <div class="warning">
+        <strong>⚠️ TDZ is about TIME, not POSITION</strong>
+        <pre>
+// This throws ReferenceError even though declaration is "above"
+{
+    const func = () => console.log(x);  // x is in TDZ when func is defined
+    // func();  // Would throw ReferenceError if called here
+    let x = 5;
+    func();  // Works now, x is initialized
+}
+        </pre>
+    </div>
+
+    <h2>3. Function Hoisting</h2>
+    <pre>
+/**
+ * FUNCTION DECLARATION HOISTING
+ * 
+ * Function declarations are FULLY hoisted - both the name AND the body.
+ * You can call them before they appear in code.
+ */
+
+// This works!
+sayHello();  // "Hello!"
+
+function sayHello() {
+    console.log("Hello!");
+}
+
+// How JavaScript interprets it:
+function sayHello() {
+    console.log("Hello!");
+}
+sayHello();  // "Hello!"
+
+// ============================================
+
+/**
+ * FUNCTION EXPRESSION - NOT HOISTED
+ * 
+ * Function expressions are treated as variable assignments.
+ * The variable is hoisted, but not the function body.
+ */
+
+// With var:
+sayHi();  // TypeError: sayHi is not a function
+
+var sayHi = function() {
+    console.log("Hi!");
+};
+
+// How JavaScript interprets it:
+var sayHi;           // undefined
+sayHi();             // TypeError: undefined is not a function
+sayHi = function() {
+    console.log("Hi!");
+};
+
+// ============================================
+
+// With let/const:
+greet();  // ReferenceError: Cannot access 'greet' before initialization
+
+const greet = function() {
+    console.log("Greetings!");
+};
+
+// ============================================
+
+/**
+ * ARROW FUNCTIONS - Same as function expressions
+ */
+
+// With var:
+arrow();  // TypeError: arrow is not a function
+var arrow = () => console.log("Arrow!");
+
+// With let/const:
+arrow2();  // ReferenceError
+const arrow2 = () => console.log("Arrow 2!");
+    </pre>
+
+    <h2>4. Class Hoisting</h2>
+    <pre>
+/**
+ * CLASS HOISTING
+ * 
+ * Classes are hoisted but NOT initialized (like let/const).
+ * They have a Temporal Dead Zone.
+ */
+
+// This throws ReferenceError
+const p = new Person();  // ReferenceError: Cannot access 'Person' before initialization
+
+class Person {
+    constructor(name) {
+        this.name = name;
+    }
+}
+
+// ============================================
+
+// Class expressions behave like function expressions
+const Animal = class {
+    constructor(type) {
+        this.type = type;
+    }
+};
+
+// Must be after declaration
+const dog = new Animal('dog');
+    </pre>
+
+    <h2>5. Hoisting in Different Scopes</h2>
+    <pre>
+/**
+ * HOISTING SCOPE RULES
+ * 
+ * - var: Hoisted to function scope (or global)
+ * - let/const: Hoisted to block scope
+ * - function: Hoisted to function scope (or global)
+ */
+
+// Global scope
+var globalVar = 'global';
+let globalLet = 'global';
+
+function outer() {
+    // Function scope
+    console.log(a);  // undefined (var hoisted to function scope)
+    console.log(b);  // ReferenceError (let in TDZ)
+    
+    var a = 1;
+    let b = 2;
+    
+    if (true) {
+        // Block scope
+        var c = 3;  // Hoisted to function scope!
+        let d = 4;  // Block-scoped
+        
+        console.log(c);  // 3
+        console.log(d);  // 4
+    }
+    
+    console.log(c);  // 3 (var is function-scoped)
+    console.log(d);  // ReferenceError (d is block-scoped)
+}
+
+// ============================================
+
+// Nested functions
+function parent() {
+    var x = 1;
+    
+    function child() {
+        console.log(x);  // undefined (child's x is hoisted)
+        var x = 2;
+        console.log(x);  // 2
+    }
+    
+    child();
+    console.log(x);  // 1 (parent's x unchanged)
+}
+    </pre>
+
+    <h2>🎤 Interview Questions</h2>
+    
+    <div class="comparison">
+        <div>
+            <h4>Question 1: What's the output?</h4>
+            <pre>
+var a = 1;
+function foo() {
+    console.log(a);
+    var a = 2;
+}
+foo();
+            </pre>
+            <p><strong>Answer:</strong> <code>undefined</code></p>
+            <p>Local <code>var a</code> is hoisted, shadows global <code>a</code></p>
+        </div>
+        <div>
+            <h4>Question 2: What's the output?</h4>
+            <pre>
+console.log(foo);
+console.log(bar);
+var foo = 'hello';
+function bar() {}
+            </pre>
+            <p><strong>Answer:</strong> <code>undefined</code>, <code>[Function: bar]</code></p>
+            <p>var is undefined, function is fully hoisted</p>
+        </div>
+    </div>
+
+    <div class="comparison">
+        <div>
+            <h4>Question 3: What's the output?</h4>
+            <pre>
+let x = 1;
+{
+    console.log(x);
+    let x = 2;
+}
+            </pre>
+            <p><strong>Answer:</strong> <code>ReferenceError</code></p>
+            <p>Inner <code>let x</code> creates TDZ in block</p>
+        </div>
+        <div>
+            <h4>Question 4: What's the output?</h4>
+            <pre>
+foo();
+bar();
+function foo() { console.log('foo'); }
+var bar = function() { console.log('bar'); };
+            </pre>
+            <p><strong>Answer:</strong> <code>'foo'</code>, then <code>TypeError</code></p>
+            <p>Function declaration hoisted, expression is not</p>
+        </div>
+    </div>
+
+    <div class="tip">
+        <h3>Best Practices</h3>
+        <ul>
+            <li>Use <code>const</code> by default, <code>let</code> when reassignment needed</li>
+            <li>Avoid <code>var</code> - use <code>let</code>/<code>const</code> instead</li>
+            <li>Declare variables at the top of their scope</li>
+            <li>Use function declarations for named functions</li>
+            <li>Be aware of TDZ when using <code>let</code>/<code>const</code></li>
+        </ul>
+    </div>
+
+    <script>
+        // Interactive examples can be run in console
+        console.log('Open DevTools Console to experiment with hoisting!');
+    </script>
+</body>
+</html>

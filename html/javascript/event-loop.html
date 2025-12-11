@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Event Loop - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; }
+        h3 { color: #2980b9; margin: 1.5rem 0 0.5rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .diagram {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .output {
+            background: #1a1a2e;
+            color: #00ff00;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 1rem 0;
+        }
+        .quiz {
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        button:hover { background: #2980b9; }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Index</a>
+    
+    <h1>⚡ JavaScript Event Loop</h1>
+    <p>Understanding how JavaScript handles asynchronous operations.</p>
+
+    <!--
+    =========================================================================
+    THE EVENT LOOP - Core Concept
+    =========================================================================
+    
+    JavaScript is SINGLE-THREADED but can handle async operations through
+    the Event Loop mechanism.
+    
+    KEY COMPONENTS:
+    
+    1. CALL STACK
+       - Where function execution happens
+       - LIFO (Last In, First Out)
+       - One thing at a time
+    
+    2. WEB APIs (Browser) / C++ APIs (Node.js)
+       - setTimeout, fetch, DOM events
+       - Run outside the main thread
+    
+    3. CALLBACK QUEUE (Task Queue / Macrotask Queue)
+       - setTimeout, setInterval callbacks
+       - I/O operations
+       - UI rendering
+    
+    4. MICROTASK QUEUE
+       - Promise callbacks (.then, .catch, .finally)
+       - queueMicrotask()
+       - MutationObserver
+       - HIGHER PRIORITY than callback queue
+    
+    EVENT LOOP PROCESS:
+    1. Execute all code in call stack
+    2. Check microtask queue, execute ALL microtasks
+    3. Render (if needed)
+    4. Take ONE task from callback queue
+    5. Repeat
+    -->
+
+    <h2>Visual Diagram</h2>
+    <div class="diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                         JAVASCRIPT ENGINE                        │
+│  ┌─────────────────┐                                            │
+│  │   CALL STACK    │     ┌──────────────────────────────────┐   │
+│  │                 │     │          HEAP (Memory)           │   │
+│  │  ┌───────────┐  │     │   Objects, variables stored here │   │
+│  │  │ function  │  │     └──────────────────────────────────┘   │
+│  │  ├───────────┤  │                                            │
+│  │  │ function  │  │                                            │
+│  │  └───────────┘  │                                            │
+│  └─────────────────┘                                            │
+└─────────────────────────────────────────────────────────────────┘
+           │                              ▲
+           │ Async call                   │ Callback
+           ▼                              │
+┌─────────────────────────────────────────────────────────────────┐
+│                         WEB APIs                                 │
+│   setTimeout()  │  fetch()  │  DOM Events  │  setInterval()     │
+└─────────────────────────────────────────────────────────────────┘
+           │                              │
+           │                              │
+           ▼                              ▼
+┌─────────────────────┐    ┌─────────────────────────────────────┐
+│   MICROTASK QUEUE   │    │      CALLBACK QUEUE (Task Queue)    │
+│   (Higher Priority) │    │         (Lower Priority)            │
+│                     │    │                                     │
+│ • Promise.then()    │    │ • setTimeout callback               │
+│ • queueMicrotask()  │    │ • setInterval callback              │
+│ • MutationObserver  │    │ • I/O callbacks                     │
+└─────────────────────┘    └─────────────────────────────────────┘
+           │                              │
+           └──────────┬───────────────────┘
+                      │
+                      ▼
+              ┌───────────────┐
+              │  EVENT LOOP   │
+              │               │
+              │ 1. Call Stack │
+              │ 2. Microtasks │
+              │ 3. Render     │
+              │ 4. One Task   │
+              │ 5. Repeat     │
+              └───────────────┘
+    </div>
+
+    <h2>Example 1: Basic Event Loop</h2>
+    <pre>
+/**
+ * BASIC EVENT LOOP EXAMPLE
+ * 
+ * This demonstrates the order of execution between:
+ * - Synchronous code
+ * - setTimeout (macrotask)
+ * - Promise (microtask)
+ */
+
+console.log('1. Script start');  // Sync - runs immediately
+
+setTimeout(() => {
+    console.log('4. setTimeout');  // Macrotask - runs last
+}, 0);
+
+Promise.resolve()
+    .then(() => {
+        console.log('3. Promise');  // Microtask - runs before setTimeout
+    });
+
+console.log('2. Script end');  // Sync - runs immediately
+
+/**
+ * OUTPUT:
+ * 1. Script start
+ * 2. Script end
+ * 3. Promise
+ * 4. setTimeout
+ * 
+ * WHY THIS ORDER?
+ * 1. Sync code runs first (1, 2)
+ * 2. Microtasks run next (Promise)
+ * 3. Macrotasks run last (setTimeout)
+ */
+    </pre>
+    
+    <button onclick="runExample1()">Run Example 1</button>
+    <div id="output1" class="output"></div>
+
+    <h2>Example 2: Nested Promises and setTimeout</h2>
+    <pre>
+/**
+ * NESTED ASYNC OPERATIONS
+ * 
+ * Shows how microtasks created during microtask execution
+ * are processed before any macrotasks.
+ */
+
+console.log('1. Start');
+
+setTimeout(() => {
+    console.log('6. Timeout 1');
+    Promise.resolve().then(() => {
+        console.log('7. Promise inside timeout');
+    });
+}, 0);
+
+Promise.resolve()
+    .then(() => {
+        console.log('3. Promise 1');
+        return Promise.resolve();
+    })
+    .then(() => {
+        console.log('5. Promise 2');
+    });
+
+Promise.resolve().then(() => {
+    console.log('4. Promise 3');
+});
+
+console.log('2. End');
+
+/**
+ * OUTPUT:
+ * 1. Start
+ * 2. End
+ * 3. Promise 1
+ * 4. Promise 3
+ * 5. Promise 2
+ * 6. Timeout 1
+ * 7. Promise inside timeout
+ * 
+ * KEY INSIGHT: ALL microtasks complete before ANY macrotask
+ */
+    </pre>
+    
+    <button onclick="runExample2()">Run Example 2</button>
+    <div id="output2" class="output"></div>
+
+    <h2>Example 3: async/await Behavior</h2>
+    <pre>
+/**
+ * ASYNC/AWAIT AND THE EVENT LOOP
+ * 
+ * async/await is syntactic sugar over Promises.
+ * Code after 'await' is like code in .then()
+ */
+
+async function asyncFunction() {
+    console.log('2. Inside async function');
+    
+    await Promise.resolve();
+    // Everything after await is like .then()
+    
+    console.log('5. After await');
+}
+
+console.log('1. Script start');
+
+asyncFunction();
+
+console.log('3. Script end');
+
+Promise.resolve().then(() => {
+    console.log('4. Promise');
+});
+
+/**
+ * OUTPUT:
+ * 1. Script start
+ * 2. Inside async function
+ * 3. Script end
+ * 4. Promise
+ * 5. After await
+ * 
+ * WHY?
+ * - async function runs sync until first await
+ * - await pauses function, returns to caller
+ * - Code after await queued as microtask
+ */
+    </pre>
+    
+    <button onclick="runExample3()">Run Example 3</button>
+    <div id="output3" class="output"></div>
+
+    <h2>Example 4: requestAnimationFrame</h2>
+    <pre>
+/**
+ * requestAnimationFrame (rAF)
+ * 
+ * rAF runs BEFORE the next repaint, after microtasks.
+ * Used for smooth animations.
+ * 
+ * Order: Sync → Microtasks → rAF → Paint → Macrotasks
+ */
+
+console.log('1. Start');
+
+requestAnimationFrame(() => {
+    console.log('4. requestAnimationFrame');
+});
+
+setTimeout(() => {
+    console.log('5. setTimeout');
+}, 0);
+
+Promise.resolve().then(() => {
+    console.log('3. Promise');
+});
+
+console.log('2. End');
+
+/**
+ * OUTPUT (may vary slightly):
+ * 1. Start
+ * 2. End
+ * 3. Promise
+ * 4. requestAnimationFrame
+ * 5. setTimeout
+ */
+    </pre>
+    
+    <button onclick="runExample4()">Run Example 4</button>
+    <div id="output4" class="output"></div>
+
+    <h2>Example 5: queueMicrotask</h2>
+    <pre>
+/**
+ * queueMicrotask()
+ * 
+ * Explicitly adds a function to the microtask queue.
+ * Same priority as Promise.then()
+ */
+
+console.log('1. Start');
+
+queueMicrotask(() => {
+    console.log('3. queueMicrotask');
+});
+
+Promise.resolve().then(() => {
+    console.log('4. Promise');
+});
+
+queueMicrotask(() => {
+    console.log('5. queueMicrotask 2');
+});
+
+console.log('2. End');
+
+/**
+ * OUTPUT:
+ * 1. Start
+ * 2. End
+ * 3. queueMicrotask
+ * 4. Promise
+ * 5. queueMicrotask 2
+ * 
+ * Microtasks execute in order they were queued
+ */
+    </pre>
+    
+    <button onclick="runExample5()">Run Example 5</button>
+    <div id="output5" class="output"></div>
+
+    <h2>🎤 Interview Quiz</h2>
+    <div class="quiz">
+        <h3>What's the output?</h3>
+        <pre>
+setTimeout(() => console.log('A'), 0);
+Promise.resolve().then(() => console.log('B'));
+Promise.resolve().then(() => setTimeout(() => console.log('C'), 0));
+Promise.resolve().then(() => console.log('D'));
+console.log('E');
+        </pre>
+        <button onclick="showAnswer()">Show Answer</button>
+        <div id="answer" style="display:none; margin-top:1rem;">
+            <strong>Answer: E, B, D, A, C</strong>
+            <p>
+                1. 'E' - Synchronous, runs first<br>
+                2. 'B' - First microtask<br>
+                3. 'D' - Third microtask (second just schedules C)<br>
+                4. 'A' - First setTimeout (macrotask)<br>
+                5. 'C' - setTimeout scheduled by microtask
+            </p>
+        </div>
+    </div>
+
+    <h2>Common Interview Questions</h2>
+    <div class="quiz">
+        <ol>
+            <li><strong>What is the event loop?</strong><br>
+                The mechanism that allows JavaScript to perform non-blocking operations despite being single-threaded.</li>
+            <li><strong>What's the difference between microtasks and macrotasks?</strong><br>
+                Microtasks (Promises) have higher priority and all execute before any macrotask (setTimeout).</li>
+            <li><strong>Why does setTimeout(fn, 0) not run immediately?</strong><br>
+                It's added to the macrotask queue and waits for the call stack and microtask queue to empty.</li>
+            <li><strong>How does async/await relate to the event loop?</strong><br>
+                Code after await is queued as a microtask, similar to Promise.then().</li>
+        </ol>
+    </div>
+
+    <script>
+        // Helper to capture console output
+        function captureOutput(fn, outputId) {
+            const output = document.getElementById(outputId);
+            output.innerHTML = '';
+            const logs = [];
+            const originalLog = console.log;
+            console.log = (...args) => {
+                logs.push(args.join(' '));
+                output.innerHTML = logs.join('\n');
+                originalLog.apply(console, args);
+            };
+            fn();
+            // Restore after async operations complete
+            setTimeout(() => { console.log = originalLog; }, 100);
+        }
+
+        function runExample1() {
+            captureOutput(() => {
+                console.log('1. Script start');
+                setTimeout(() => console.log('4. setTimeout'), 0);
+                Promise.resolve().then(() => console.log('3. Promise'));
+                console.log('2. Script end');
+            }, 'output1');
+        }
+
+        function runExample2() {
+            captureOutput(() => {
+                console.log('1. Start');
+                setTimeout(() => {
+                    console.log('6. Timeout 1');
+                    Promise.resolve().then(() => console.log('7. Promise inside timeout'));
+                }, 0);
+                Promise.resolve()
+                    .then(() => { console.log('3. Promise 1'); return Promise.resolve(); })
+                    .then(() => console.log('5. Promise 2'));
+                Promise.resolve().then(() => console.log('4. Promise 3'));
+                console.log('2. End');
+            }, 'output2');
+        }
+
+        function runExample3() {
+            captureOutput(() => {
+                async function asyncFunction() {
+                    console.log('2. Inside async function');
+                    await Promise.resolve();
+                    console.log('5. After await');
+                }
+                console.log('1. Script start');
+                asyncFunction();
+                console.log('3. Script end');
+                Promise.resolve().then(() => console.log('4. Promise'));
+            }, 'output3');
+        }
+
+        function runExample4() {
+            captureOutput(() => {
+                console.log('1. Start');
+                requestAnimationFrame(() => console.log('4. requestAnimationFrame'));
+                setTimeout(() => console.log('5. setTimeout'), 0);
+                Promise.resolve().then(() => console.log('3. Promise'));
+                console.log('2. End');
+            }, 'output4');
+        }
+
+        function runExample5() {
+            captureOutput(() => {
+                console.log('1. Start');
+                queueMicrotask(() => console.log('3. queueMicrotask'));
+                Promise.resolve().then(() => console.log('4. Promise'));
+                queueMicrotask(() => console.log('5. queueMicrotask 2'));
+                console.log('2. End');
+            }, 'output5');
+        }
+
+        function showAnswer() {
+            document.getElementById('answer').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

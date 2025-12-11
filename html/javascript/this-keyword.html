@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript 'this' Keyword - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; }
+        h3 { color: #2980b9; margin: 1.5rem 0 0.5rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .output {
+            background: #1a1a2e;
+            color: #00ff00;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 1rem 0;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { border: 1px solid #dee2e6; padding: 0.75rem; text-align: left; }
+        th { background: #f8f9fa; }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        button:hover { background: #2980b9; }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Index</a>
+    
+    <h1>👆 The 'this' Keyword</h1>
+    <p>Understanding how 'this' is determined in JavaScript.</p>
+
+    <!--
+    =========================================================================
+    'this' BINDING RULES (in order of precedence)
+    =========================================================================
+    
+    1. new binding: this = newly created object
+    2. explicit binding: call(), apply(), bind()
+    3. implicit binding: object.method() - this = object
+    4. default binding: this = global (or undefined in strict mode)
+    
+    ARROW FUNCTIONS: Don't have their own 'this', inherit from enclosing scope
+    -->
+
+    <h2>Quick Reference</h2>
+    <table>
+        <tr>
+            <th>Context</th>
+            <th>'this' Value</th>
+            <th>Example</th>
+        </tr>
+        <tr>
+            <td>Global (non-strict)</td>
+            <td>window / global</td>
+            <td><code>console.log(this)</code></td>
+        </tr>
+        <tr>
+            <td>Global (strict)</td>
+            <td>undefined</td>
+            <td><code>'use strict'; console.log(this)</code></td>
+        </tr>
+        <tr>
+            <td>Object method</td>
+            <td>The object</td>
+            <td><code>obj.method()</code></td>
+        </tr>
+        <tr>
+            <td>Constructor (new)</td>
+            <td>New instance</td>
+            <td><code>new Constructor()</code></td>
+        </tr>
+        <tr>
+            <td>call/apply/bind</td>
+            <td>Specified object</td>
+            <td><code>fn.call(obj)</code></td>
+        </tr>
+        <tr>
+            <td>Arrow function</td>
+            <td>Enclosing scope's this</td>
+            <td><code>() => this</code></td>
+        </tr>
+        <tr>
+            <td>Event handler</td>
+            <td>Element that fired event</td>
+            <td><code>el.onclick = function() {}</code></td>
+        </tr>
+    </table>
+
+    <h2>1. Default Binding</h2>
+    <pre>
+/**
+ * DEFAULT BINDING
+ * 
+ * When a function is called without any context,
+ * 'this' defaults to the global object (or undefined in strict mode).
+ */
+
+function showThis() {
+    console.log(this);
+}
+
+showThis();  // window (browser) or global (Node.js)
+
+// In strict mode:
+'use strict';
+function showThisStrict() {
+    console.log(this);
+}
+showThisStrict();  // undefined
+
+// Common gotcha: callback functions
+const obj = {
+    name: 'Object',
+    greet() {
+        setTimeout(function() {
+            console.log(this.name);  // undefined! (default binding)
+        }, 100);
+    }
+};
+    </pre>
+
+    <h2>2. Implicit Binding</h2>
+    <pre>
+/**
+ * IMPLICIT BINDING
+ * 
+ * When a function is called as a method of an object,
+ * 'this' is the object before the dot.
+ */
+
+const person = {
+    name: 'Alice',
+    greet() {
+        console.log(`Hello, I'm ${this.name}`);
+    }
+};
+
+person.greet();  // "Hello, I'm Alice" - this = person
+
+// The object "before the dot" matters
+const greetFn = person.greet;
+greetFn();  // "Hello, I'm undefined" - this = window (lost binding!)
+
+// Nested objects: only the immediate object matters
+const company = {
+    name: 'TechCorp',
+    department: {
+        name: 'Engineering',
+        getName() {
+            return this.name;
+        }
+    }
+};
+
+company.department.getName();  // "Engineering" (not "TechCorp")
+    </pre>
+    <button onclick="runImplicit()">Run Example</button>
+    <div id="output1" class="output"></div>
+
+    <h2>3. Explicit Binding (call, apply, bind)</h2>
+    <pre>
+/**
+ * EXPLICIT BINDING
+ * 
+ * Manually set 'this' using call(), apply(), or bind().
+ */
+
+function greet(greeting, punctuation) {
+    console.log(`${greeting}, I'm ${this.name}${punctuation}`);
+}
+
+const alice = { name: 'Alice' };
+const bob = { name: 'Bob' };
+
+// call() - pass arguments individually
+greet.call(alice, 'Hello', '!');  // "Hello, I'm Alice!"
+greet.call(bob, 'Hi', '.');       // "Hi, I'm Bob."
+
+// apply() - pass arguments as array
+greet.apply(alice, ['Hey', '?']); // "Hey, I'm Alice?"
+
+// bind() - returns NEW function with 'this' bound
+const aliceGreet = greet.bind(alice);
+aliceGreet('Howdy', '!');  // "Howdy, I'm Alice!"
+
+// bind() with partial application
+const aliceHello = greet.bind(alice, 'Hello');
+aliceHello('!!!');  // "Hello, I'm Alice!!!"
+
+// Useful for callbacks
+const obj = {
+    name: 'Object',
+    greet() {
+        setTimeout(function() {
+            console.log(this.name);
+        }.bind(this), 100);  // Bind 'this' to obj
+    }
+};
+    </pre>
+    <button onclick="runExplicit()">Run Example</button>
+    <div id="output2" class="output"></div>
+
+    <h2>4. new Binding</h2>
+    <pre>
+/**
+ * NEW BINDING
+ * 
+ * When a function is called with 'new', 'this' is the newly created object.
+ */
+
+function Person(name) {
+    // 'this' is a new empty object
+    this.name = name;
+    this.greet = function() {
+        console.log(`Hi, I'm ${this.name}`);
+    };
+    // Implicitly returns 'this'
+}
+
+const alice = new Person('Alice');
+alice.greet();  // "Hi, I'm Alice"
+
+// What 'new' does:
+// 1. Creates a new empty object
+// 2. Sets the object's prototype to Constructor.prototype
+// 3. Calls the constructor with 'this' = new object
+// 4. Returns the object (unless constructor returns an object)
+
+// ES6 Class (same behavior)
+class Animal {
+    constructor(name) {
+        this.name = name;  // 'this' is the new instance
+    }
+    speak() {
+        console.log(`${this.name} makes a sound`);
+    }
+}
+
+const dog = new Animal('Dog');
+dog.speak();  // "Dog makes a sound"
+    </pre>
+
+    <h2>5. Arrow Functions</h2>
+    <pre>
+/**
+ * ARROW FUNCTIONS AND 'this'
+ * 
+ * Arrow functions DON'T have their own 'this'.
+ * They inherit 'this' from the enclosing scope (lexical this).
+ */
+
+const obj = {
+    name: 'Object',
+    
+    // Regular function: 'this' depends on how it's called
+    regularMethod() {
+        console.log('Regular:', this.name);
+    },
+    
+    // Arrow function: 'this' is from enclosing scope (global here!)
+    arrowMethod: () => {
+        console.log('Arrow:', this.name);  // undefined!
+    },
+    
+    // Arrow in regular method: inherits 'this' from method
+    delayedGreet() {
+        setTimeout(() => {
+            console.log('Delayed:', this.name);  // Works! 'this' = obj
+        }, 100);
+    }
+};
+
+obj.regularMethod();  // "Regular: Object"
+obj.arrowMethod();    // "Arrow: undefined"
+obj.delayedGreet();   // "Delayed: Object"
+
+// Arrow functions CANNOT be bound
+const arrow = () => console.log(this);
+arrow.call({ name: 'test' });  // Still global 'this'!
+
+// When to use arrow functions:
+// ✅ Callbacks that need parent's 'this'
+// ✅ Short functions in array methods
+// ❌ Object methods
+// ❌ Constructors
+// ❌ Event handlers that need element as 'this'
+    </pre>
+    <button onclick="runArrow()">Run Example</button>
+    <div id="output3" class="output"></div>
+
+    <h2>6. Event Handlers</h2>
+    <pre>
+/**
+ * 'this' IN EVENT HANDLERS
+ */
+
+// Regular function: 'this' = element that fired the event
+button.addEventListener('click', function() {
+    console.log(this);  // The button element
+    this.classList.add('clicked');
+});
+
+// Arrow function: 'this' = enclosing scope (probably window)
+button.addEventListener('click', () => {
+    console.log(this);  // window, NOT the button!
+});
+
+// Class methods need binding
+class Counter {
+    constructor() {
+        this.count = 0;
+        this.button = document.querySelector('button');
+        
+        // Option 1: bind in constructor
+        this.increment = this.increment.bind(this);
+        this.button.addEventListener('click', this.increment);
+        
+        // Option 2: arrow function in class field
+        // increment = () => { this.count++; }
+        
+        // Option 3: arrow wrapper
+        // this.button.addEventListener('click', () => this.increment());
+    }
+    
+    increment() {
+        this.count++;
+        console.log(this.count);
+    }
+}
+    </pre>
+
+    <h2>Binding Precedence</h2>
+    <pre>
+/**
+ * BINDING PRECEDENCE (highest to lowest)
+ * 
+ * 1. new binding
+ * 2. explicit binding (call/apply/bind)
+ * 3. implicit binding (object.method)
+ * 4. default binding (global/undefined)
+ */
+
+function foo() {
+    console.log(this.a);
+}
+
+const obj1 = { a: 1, foo };
+const obj2 = { a: 2, foo };
+
+// Implicit binding
+obj1.foo();  // 1
+
+// Explicit beats implicit
+obj1.foo.call(obj2);  // 2
+
+// new beats explicit
+const boundFoo = foo.bind(obj1);
+boundFoo();  // 1
+
+const newObj = new boundFoo();  // undefined (new object has no 'a')
+console.log(newObj);  // {} - new binding won!
+    </pre>
+
+    <div class="tip">
+        <h3>🎤 Interview Questions</h3>
+        <ul>
+            <li><strong>What determines 'this' in JavaScript?</strong> How the function is called, not where it's defined</li>
+            <li><strong>How do arrow functions handle 'this'?</strong> They inherit from enclosing scope (lexical this)</li>
+            <li><strong>What's the difference between call and apply?</strong> call takes arguments individually, apply takes an array</li>
+            <li><strong>Can you change 'this' in an arrow function?</strong> No, call/apply/bind don't affect arrow functions</li>
+            <li><strong>What does 'new' do to 'this'?</strong> Creates a new object and sets 'this' to that object</li>
+        </ul>
+    </div>
+
+    <script>
+        function log(outputId, ...args) {
+            const output = document.getElementById(outputId);
+            output.innerHTML += args.join(' ') + '\n';
+        }
+
+        function runImplicit() {
+            document.getElementById('output1').innerHTML = '';
+            const person = {
+                name: 'Alice',
+                greet() { return `Hello, I'm ${this.name}`; }
+            };
+            log('output1', 'person.greet():', person.greet());
+            
+            const greetFn = person.greet;
+            log('output1', 'greetFn():', greetFn());  // Lost binding
+        }
+
+        function runExplicit() {
+            document.getElementById('output2').innerHTML = '';
+            function greet(greeting) {
+                return `${greeting}, I'm ${this.name}`;
+            }
+            const alice = { name: 'Alice' };
+            const bob = { name: 'Bob' };
+            
+            log('output2', 'call(alice):', greet.call(alice, 'Hello'));
+            log('output2', 'call(bob):', greet.call(bob, 'Hi'));
+            
+            const boundGreet = greet.bind(alice);
+            log('output2', 'bound():', boundGreet('Hey'));
+        }
+
+        function runArrow() {
+            document.getElementById('output3').innerHTML = '';
+            const obj = {
+                name: 'Object',
+                regular() { return `Regular: ${this.name}`; },
+                arrow: () => `Arrow: ${this?.name || 'undefined'}`
+            };
+            
+            log('output3', obj.regular());
+            log('output3', obj.arrow());
+        }
+    </script>
+</body>
+</html>

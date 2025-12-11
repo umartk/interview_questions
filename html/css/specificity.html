@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Specificity - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { border: 1px solid #dee2e6; padding: 0.75rem; text-align: left; }
+        th { background: #f8f9fa; }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+        .specificity-demo {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Index</a>
+    
+    <h1>⚖️ CSS Specificity</h1>
+    <p>Understanding how browsers determine which CSS rules apply.</p>
+
+    <h2>Specificity Hierarchy</h2>
+    <table>
+        <tr>
+            <th>Level</th>
+            <th>Selector Type</th>
+            <th>Specificity</th>
+            <th>Example</th>
+        </tr>
+        <tr>
+            <td>0</td>
+            <td>!important</td>
+            <td>Overrides all</td>
+            <td><code>color: red !important;</code></td>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>Inline styles</td>
+            <td>1,0,0,0</td>
+            <td><code>style="color: red;"</code></td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>IDs</td>
+            <td>0,1,0,0</td>
+            <td><code>#header</code></td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>Classes, attributes, pseudo-classes</td>
+            <td>0,0,1,0</td>
+            <td><code>.nav</code>, <code>[type="text"]</code>, <code>:hover</code></td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>Elements, pseudo-elements</td>
+            <td>0,0,0,1</td>
+            <td><code>div</code>, <code>::before</code></td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>Universal selector</td>
+            <td>0,0,0,0</td>
+            <td><code>*</code></td>
+        </tr>
+    </table>
+
+    <h2>Calculating Specificity</h2>
+    <pre>
+/**
+ * SPECIFICITY CALCULATION
+ * 
+ * Format: (inline, IDs, classes, elements)
+ * Compare from left to right
+ */
+
+/* Examples */
+*                    → 0,0,0,0
+div                  → 0,0,0,1
+div p                → 0,0,0,2
+.class               → 0,0,1,0
+div.class            → 0,0,1,1
+#id                  → 0,1,0,0
+#id .class           → 0,1,1,0
+#id .class div       → 0,1,1,1
+style=""             → 1,0,0,0
+
+/* Comparison */
+#nav .item           → 0,1,1,0  ✓ WINS
+.nav .item .link     → 0,0,3,0  ✗ loses (0,1 > 0,0)
+
+/* More IDs always win over more classes */
+#a                   → 0,1,0,0  ✓ WINS
+.a.b.c.d.e.f.g.h.i.j → 0,0,10,0 ✗ loses
+    </pre>
+
+    <h2>Specificity Examples</h2>
+    <pre>
+/* Which color wins? */
+
+/* Specificity: 0,0,0,1 */
+p { color: black; }
+
+/* Specificity: 0,0,1,0 - WINS over element */
+.text { color: blue; }
+
+/* Specificity: 0,0,1,1 */
+p.text { color: green; }
+
+/* Specificity: 0,1,0,0 - WINS (has ID) */
+#intro { color: red; }
+
+/* Specificity: 0,1,1,0 */
+#intro.text { color: purple; }
+
+/* Specificity: 0,1,1,1 */
+p#intro.text { color: orange; }
+
+/* !important overrides all specificity */
+p { color: pink !important; }  /* WINS */
+    </pre>
+
+    <h2>Common Specificity Scenarios</h2>
+    <pre>
+/* SCENARIO 1: Same specificity - last one wins */
+.button { color: red; }
+.button { color: blue; }  /* WINS - comes later */
+
+/* SCENARIO 2: Nested selectors */
+.nav .item { color: red; }      /* 0,0,2,0 */
+.nav-item { color: blue; }      /* 0,0,1,0 */
+/* Red wins - higher specificity */
+
+/* SCENARIO 3: Pseudo-classes count as classes */
+a:hover { color: red; }         /* 0,0,1,1 */
+.link { color: blue; }          /* 0,0,1,0 */
+/* Red wins when hovering */
+
+/* SCENARIO 4: Attribute selectors count as classes */
+input[type="text"] { }          /* 0,0,1,1 */
+.input { }                      /* 0,0,1,0 */
+/* Attribute selector wins */
+
+/* SCENARIO 5: :not() doesn't add specificity itself */
+:not(.foo) { }                  /* 0,0,1,0 (just .foo) */
+:not(#bar) { }                  /* 0,1,0,0 (just #bar) */
+    </pre>
+
+    <h2>Best Practices</h2>
+    <pre>
+/**
+ * SPECIFICITY BEST PRACTICES
+ */
+
+/* ❌ BAD: Over-specific selectors */
+#header #nav ul li a.link { }
+
+/* ✓ GOOD: Low specificity, easy to override */
+.nav-link { }
+
+/* ❌ BAD: Using !important */
+.button { color: red !important; }
+
+/* ✓ GOOD: Use more specific selector if needed */
+.form .button { color: red; }
+
+/* ❌ BAD: IDs for styling */
+#submit-button { }
+
+/* ✓ GOOD: Classes for styling */
+.submit-button { }
+
+/* ❌ BAD: Inline styles */
+&lt;div style="color: red;"&gt;
+
+/* ✓ GOOD: External/internal CSS */
+.highlight { color: red; }
+
+/**
+ * METHODOLOGIES TO MANAGE SPECIFICITY
+ * 
+ * BEM (Block Element Modifier):
+ * .block__element--modifier
+ * 
+ * All selectors have same specificity (0,0,1,0)
+ */
+.card { }
+.card__title { }
+.card__title--large { }
+.card--featured { }
+    </pre>
+
+    <div class="warning">
+        <h3>⚠️ When to Use !important</h3>
+        <ul>
+            <li>Utility classes that MUST override: <code>.hidden { display: none !important; }</code></li>
+            <li>Overriding third-party CSS you can't modify</li>
+            <li>Temporary debugging (remove before committing!)</li>
+        </ul>
+        <p><strong>Never use !important for:</strong> Regular styling, fixing specificity wars</p>
+    </div>
+
+    <h2>Specificity Quiz</h2>
+    <pre>
+/* Which selector wins? */
+
+/* Question 1 */
+.list .item { color: red; }     /* 0,0,2,0 */
+ul li { color: blue; }          /* 0,0,0,2 */
+/* Answer: .list .item (red) - classes beat elements */
+
+/* Question 2 */
+#nav a { color: red; }          /* 0,1,0,1 */
+.nav .link { color: blue; }     /* 0,0,2,0 */
+/* Answer: #nav a (red) - ID beats any number of classes */
+
+/* Question 3 */
+body #content .data { }         /* 0,1,1,1 */
+html body #content .data { }    /* 0,1,1,2 */
+/* Answer: Second one - same ID/class count, more elements */
+
+/* Question 4 */
+.a.b.c { }                      /* 0,0,3,0 */
+.x { }                          /* 0,0,1,0 */
+/* Answer: .a.b.c - more classes */
+    </pre>
+
+    <div class="tip">
+        <h3>🎤 Interview Questions</h3>
+        <ul>
+            <li><strong>How is specificity calculated?</strong> Count IDs, classes, elements - compare left to right</li>
+            <li><strong>What beats an ID?</strong> Only inline styles or !important</li>
+            <li><strong>Does :not() add specificity?</strong> No, but its argument does</li>
+            <li><strong>How to avoid specificity wars?</strong> Use BEM, keep selectors flat, avoid IDs</li>
+            <li><strong>When is !important acceptable?</strong> Utility classes, overriding third-party CSS</li>
+        </ul>
+    </div>
+</body>
+</html>

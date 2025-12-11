@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Core Web Vitals - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; border-bottom: 2px solid #3498db; padding-bottom: 0.5rem; }
+        h3 { color: #2980b9; margin: 1.5rem 0 0.5rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid;
+        }
+        .lcp { border-color: #27ae60; }
+        .fid { border-color: #3498db; }
+        .cls { border-color: #9b59b6; }
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .metric-name { font-size: 1.25rem; font-weight: bold; }
+        .metric-values {
+            display: flex;
+            gap: 1rem;
+        }
+        .good { background: #d4edda; color: #155724; padding: 0.25rem 0.5rem; border-radius: 4px; }
+        .needs-improvement { background: #fff3cd; color: #856404; padding: 0.25rem 0.5rem; border-radius: 4px; }
+        .poor { background: #f8d7da; color: #721c24; padding: 0.25rem 0.5rem; border-radius: 4px; }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { border: 1px solid #dee2e6; padding: 0.75rem; text-align: left; }
+        th { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← Back to Index</a>
+    
+    <h1>📊 Core Web Vitals</h1>
+    <p>Google's essential metrics for measuring user experience on the web.</p>
+
+    <!--
+    =========================================================================
+    CORE WEB VITALS - Overview
+    =========================================================================
+    
+    Core Web Vitals are a set of specific factors that Google considers
+    important in a webpage's overall user experience.
+    
+    THREE MAIN METRICS:
+    
+    1. LCP (Largest Contentful Paint) - LOADING
+       Measures how quickly the main content loads
+    
+    2. FID (First Input Delay) - INTERACTIVITY
+       Measures how quickly the page responds to user input
+       Note: Being replaced by INP (Interaction to Next Paint) in 2024
+    
+    3. CLS (Cumulative Layout Shift) - VISUAL STABILITY
+       Measures how much the page layout shifts unexpectedly
+    
+    WHY THEY MATTER:
+    - Directly impact SEO rankings
+    - Affect user experience and bounce rates
+    - Part of Google's Page Experience signals
+    -->
+
+    <h2>The Three Core Web Vitals</h2>
+
+    <div class="metric-card lcp">
+        <div class="metric-header">
+            <span class="metric-name">🖼️ LCP - Largest Contentful Paint</span>
+            <div class="metric-values">
+                <span class="good">Good: ≤2.5s</span>
+                <span class="needs-improvement">Needs Work: ≤4s</span>
+                <span class="poor">Poor: >4s</span>
+            </div>
+        </div>
+        <p><strong>What it measures:</strong> Time until the largest content element is rendered.</p>
+        <p><strong>Elements considered:</strong> Images, video posters, background images, block-level text.</p>
+    </div>
+
+    <div class="metric-card fid">
+        <div class="metric-header">
+            <span class="metric-name">👆 FID - First Input Delay</span>
+            <div class="metric-values">
+                <span class="good">Good: ≤100ms</span>
+                <span class="needs-improvement">Needs Work: ≤300ms</span>
+                <span class="poor">Poor: >300ms</span>
+            </div>
+        </div>
+        <p><strong>What it measures:</strong> Time from first user interaction to browser response.</p>
+        <p><strong>Note:</strong> Being replaced by INP (Interaction to Next Paint) in March 2024.</p>
+    </div>
+
+    <div class="metric-card cls">
+        <div class="metric-header">
+            <span class="metric-name">📐 CLS - Cumulative Layout Shift</span>
+            <div class="metric-values">
+                <span class="good">Good: ≤0.1</span>
+                <span class="needs-improvement">Needs Work: ≤0.25</span>
+                <span class="poor">Poor: >0.25</span>
+            </div>
+        </div>
+        <p><strong>What it measures:</strong> Sum of all unexpected layout shifts during page life.</p>
+        <p><strong>Formula:</strong> Impact Fraction × Distance Fraction</p>
+    </div>
+
+    <h2>LCP - Largest Contentful Paint</h2>
+    <h3>Common Causes of Poor LCP</h3>
+    <ul>
+        <li>Slow server response times</li>
+        <li>Render-blocking JavaScript and CSS</li>
+        <li>Slow resource load times (images, fonts)</li>
+        <li>Client-side rendering delays</li>
+    </ul>
+
+    <h3>Optimization Strategies</h3>
+    <pre>
+/**
+ * LCP OPTIMIZATION TECHNIQUES
+ */
+
+// 1. PRELOAD CRITICAL RESOURCES
+// Add to &lt;head&gt; for critical images
+&lt;link rel="preload" as="image" href="hero-image.jpg"&gt;
+
+// 2. OPTIMIZE IMAGES
+// Use modern formats (WebP, AVIF)
+&lt;picture&gt;
+    &lt;source srcset="image.avif" type="image/avif"&gt;
+    &lt;source srcset="image.webp" type="image/webp"&gt;
+    &lt;img src="image.jpg" alt="Description"&gt;
+&lt;/picture&gt;
+
+// 3. USE RESPONSIVE IMAGES
+&lt;img 
+    srcset="small.jpg 480w, medium.jpg 800w, large.jpg 1200w"
+    sizes="(max-width: 600px) 480px, (max-width: 1000px) 800px, 1200px"
+    src="medium.jpg"
+    alt="Description"
+&gt;
+
+// 4. INLINE CRITICAL CSS
+&lt;style&gt;
+    /* Critical above-the-fold CSS */
+    .hero { ... }
+&lt;/style&gt;
+
+// 5. USE CDN FOR STATIC ASSETS
+// Reduces latency by serving from edge locations
+
+// 6. IMPLEMENT CACHING
+// Cache-Control: public, max-age=31536000, immutable
+    </pre>
+
+    <h2>FID / INP - Interactivity</h2>
+    <h3>Common Causes of Poor FID</h3>
+    <ul>
+        <li>Long JavaScript execution (blocking main thread)</li>
+        <li>Large JavaScript bundles</li>
+        <li>Third-party scripts</li>
+        <li>Heavy DOM manipulation</li>
+    </ul>
+
+    <h3>Optimization Strategies</h3>
+    <pre>
+/**
+ * FID/INP OPTIMIZATION TECHNIQUES
+ */
+
+// 1. BREAK UP LONG TASKS
+// Bad: One long task
+function processData(items) {
+    items.forEach(item => heavyProcessing(item));
+}
+
+// Good: Yield to main thread
+async function processDataAsync(items) {
+    for (const item of items) {
+        heavyProcessing(item);
+        // Yield to allow browser to handle user input
+        await new Promise(resolve => setTimeout(resolve, 0));
+    }
+}
+
+// 2. USE WEB WORKERS FOR HEAVY COMPUTATION
+const worker = new Worker('heavy-task.js');
+worker.postMessage(data);
+worker.onmessage = (e) => {
+    console.log('Result:', e.data);
+};
+
+// 3. CODE SPLITTING - Load only what's needed
+// Dynamic imports
+const module = await import('./heavy-module.js');
+
+// 4. DEFER NON-CRITICAL JAVASCRIPT
+&lt;script src="analytics.js" defer&gt;&lt;/script&gt;
+
+// 5. USE requestIdleCallback FOR NON-URGENT WORK
+requestIdleCallback((deadline) => {
+    while (deadline.timeRemaining() > 0) {
+        doNonUrgentWork();
+    }
+});
+
+// 6. DEBOUNCE/THROTTLE EVENT HANDLERS
+const debouncedSearch = debounce(search, 300);
+input.addEventListener('input', debouncedSearch);
+    </pre>
+
+    <h2>CLS - Cumulative Layout Shift</h2>
+    <h3>Common Causes of Layout Shifts</h3>
+    <ul>
+        <li>Images without dimensions</li>
+        <li>Ads, embeds, iframes without dimensions</li>
+        <li>Dynamically injected content</li>
+        <li>Web fonts causing FOIT/FOUT</li>
+        <li>Actions waiting for network response</li>
+    </ul>
+
+    <h3>Optimization Strategies</h3>
+    <pre>
+/**
+ * CLS OPTIMIZATION TECHNIQUES
+ */
+
+// 1. ALWAYS SET IMAGE DIMENSIONS
+// Bad
+&lt;img src="image.jpg"&gt;
+
+// Good - Browser reserves space
+&lt;img src="image.jpg" width="800" height="600"&gt;
+
+// Or use CSS aspect-ratio
+&lt;style&gt;
+    .image-container {
+        aspect-ratio: 16 / 9;
+        width: 100%;
+    }
+&lt;/style&gt;
+
+// 2. RESERVE SPACE FOR ADS/EMBEDS
+&lt;div style="min-height: 250px;"&gt;
+    &lt;!-- Ad will load here --&gt;
+&lt;/div&gt;
+
+// 3. AVOID INSERTING CONTENT ABOVE EXISTING CONTENT
+// Bad: Inserting banner at top pushes content down
+// Good: Use fixed position or reserve space
+
+// 4. OPTIMIZE WEB FONTS
+// Preload fonts
+&lt;link rel="preload" href="font.woff2" as="font" crossorigin&gt;
+
+// Use font-display
+@font-face {
+    font-family: 'MyFont';
+    src: url('font.woff2') format('woff2');
+    font-display: swap; /* or optional */
+}
+
+// 5. USE CSS TRANSFORMS FOR ANIMATIONS
+// Bad: Animating width/height causes layout shifts
+.element {
+    transition: width 0.3s;
+}
+
+// Good: Transform doesn't cause layout shifts
+.element {
+    transition: transform 0.3s;
+}
+.element:hover {
+    transform: scale(1.1);
+}
+
+// 6. USE SKELETON SCREENS
+&lt;div class="skeleton"&gt;
+    &lt;div class="skeleton-text"&gt;&lt;/div&gt;
+    &lt;div class="skeleton-text"&gt;&lt;/div&gt;
+&lt;/div&gt;
+    </pre>
+
+    <h2>Measuring Core Web Vitals</h2>
+    <pre>
+/**
+ * MEASURING CORE WEB VITALS IN JAVASCRIPT
+ */
+
+// Using web-vitals library
+import { getLCP, getFID, getCLS } from 'web-vitals';
+
+getLCP(console.log);  // Largest Contentful Paint
+getFID(console.log);  // First Input Delay
+getCLS(console.log);  // Cumulative Layout Shift
+
+// Using PerformanceObserver API
+// LCP
+new PerformanceObserver((entryList) => {
+    const entries = entryList.getEntries();
+    const lastEntry = entries[entries.length - 1];
+    console.log('LCP:', lastEntry.startTime);
+}).observe({ type: 'largest-contentful-paint', buffered: true });
+
+// CLS
+let clsValue = 0;
+new PerformanceObserver((entryList) => {
+    for (const entry of entryList.getEntries()) {
+        if (!entry.hadRecentInput) {
+            clsValue += entry.value;
+        }
+    }
+    console.log('CLS:', clsValue);
+}).observe({ type: 'layout-shift', buffered: true });
+
+// FID
+new PerformanceObserver((entryList) => {
+    const firstInput = entryList.getEntries()[0];
+    console.log('FID:', firstInput.processingStart - firstInput.startTime);
+}).observe({ type: 'first-input', buffered: true });
+    </pre>
+
+    <h2>Tools for Measuring</h2>
+    <table>
+        <tr>
+            <th>Tool</th>
+            <th>Type</th>
+            <th>Best For</th>
+        </tr>
+        <tr>
+            <td>Lighthouse</td>
+            <td>Lab Data</td>
+            <td>Development, CI/CD</td>
+        </tr>
+        <tr>
+            <td>PageSpeed Insights</td>
+            <td>Lab + Field</td>
+            <td>Quick analysis</td>
+        </tr>
+        <tr>
+            <td>Chrome DevTools</td>
+            <td>Lab Data</td>
+            <td>Debugging</td>
+        </tr>
+        <tr>
+            <td>Chrome UX Report</td>
+            <td>Field Data</td>
+            <td>Real user metrics</td>
+        </tr>
+        <tr>
+            <td>Web Vitals Extension</td>
+            <td>Lab Data</td>
+            <td>Quick checks</td>
+        </tr>
+    </table>
+
+    <div class="tip">
+        <h3>🎤 Interview Tips</h3>
+        <ul>
+            <li><strong>Know the thresholds:</strong> LCP ≤2.5s, FID ≤100ms, CLS ≤0.1</li>
+            <li><strong>Understand the difference:</strong> Lab data (Lighthouse) vs Field data (CrUX)</li>
+            <li><strong>Be ready to explain:</strong> How you've optimized each metric in past projects</li>
+            <li><strong>Know the tools:</strong> Lighthouse, PageSpeed Insights, Chrome DevTools</li>
+        </ul>
+    </div>
+</body>
+</html>

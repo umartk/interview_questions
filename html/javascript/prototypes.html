@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prototypes & Inheritance - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .diagram {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .output {
+            background: #1a1a2e;
+            color: #00ff00;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 1rem 0;
+        }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        button:hover { background: #2980b9; }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Index</a>
+    
+    <h1>🔗 Prototypes & Inheritance</h1>
+    <p>Understanding JavaScript's prototypal inheritance model.</p>
+
+    <h2>The Prototype Chain</h2>
+    <div class="diagram">
+┌─────────────────────────────────────────────────────────────────┐
+│                     PROTOTYPE CHAIN                              │
+└─────────────────────────────────────────────────────────────────┘
+
+  const dog = new Animal('Dog');
+
+  dog                          Animal.prototype           Object.prototype
+  ┌──────────────┐            ┌──────────────┐           ┌──────────────┐
+  │ name: 'Dog'  │            │ speak()      │           │ toString()   │
+  │              │            │ constructor  │           │ hasOwnProperty│
+  │ __proto__ ───┼──────────► │              │           │ valueOf()    │
+  └──────────────┘            │ __proto__ ───┼─────────► │              │
+                              └──────────────┘           │ __proto__: null
+                                                         └──────────────┘
+
+  Property Lookup:
+  1. Check dog.name → Found on dog itself
+  2. Check dog.speak → Not on dog, check dog.__proto__ (Animal.prototype) → Found!
+  3. Check dog.toString → Not on dog or Animal.prototype, check Object.prototype → Found!
+  4. Check dog.foo → Not found anywhere → undefined
+    </div>
+
+    <h2>Constructor Functions</h2>
+    <pre>
+/**
+ * CONSTRUCTOR FUNCTIONS (Pre-ES6)
+ * 
+ * Functions used with 'new' to create objects.
+ * The prototype property is shared among all instances.
+ */
+
+function Animal(name) {
+    // Instance properties (each instance gets its own)
+    this.name = name;
+}
+
+// Prototype methods (shared among all instances)
+Animal.prototype.speak = function() {
+    console.log(`${this.name} makes a sound`);
+};
+
+Animal.prototype.sleep = function() {
+    console.log(`${this.name} is sleeping`);
+};
+
+const dog = new Animal('Dog');
+const cat = new Animal('Cat');
+
+dog.speak();  // "Dog makes a sound"
+cat.speak();  // "Cat makes a sound"
+
+// Both share the same method
+console.log(dog.speak === cat.speak);  // true
+
+// Check prototype chain
+console.log(dog.__proto__ === Animal.prototype);  // true
+console.log(Animal.prototype.__proto__ === Object.prototype);  // true
+    </pre>
+    <button onclick="runConstructor()">Run Example</button>
+    <div id="output1" class="output"></div>
+
+    <h2>ES6 Classes</h2>
+    <pre>
+/**
+ * ES6 CLASSES
+ * 
+ * Syntactic sugar over prototype-based inheritance.
+ * Under the hood, it's still prototypes!
+ */
+
+class Animal {
+    // Constructor
+    constructor(name) {
+        this.name = name;  // Instance property
+    }
+    
+    // Prototype method
+    speak() {
+        console.log(`${this.name} makes a sound`);
+    }
+    
+    // Static method (on class itself, not prototype)
+    static create(name) {
+        return new Animal(name);
+    }
+    
+    // Getter
+    get info() {
+        return `Animal: ${this.name}`;
+    }
+    
+    // Setter
+    set nickname(value) {
+        this._nickname = value;
+    }
+}
+
+// Inheritance with extends
+class Dog extends Animal {
+    constructor(name, breed) {
+        super(name);  // Call parent constructor
+        this.breed = breed;
+    }
+    
+    // Override parent method
+    speak() {
+        console.log(`${this.name} barks`);
+    }
+    
+    // Call parent method
+    speakLoud() {
+        super.speak();  // Call Animal's speak
+        console.log('WOOF!');
+    }
+}
+
+const dog = new Dog('Buddy', 'Golden Retriever');
+dog.speak();      // "Buddy barks"
+dog.speakLoud();  // "Buddy makes a sound" then "WOOF!"
+    </pre>
+    <button onclick="runClass()">Run Example</button>
+    <div id="output2" class="output"></div>
+
+    <h2>Object.create()</h2>
+    <pre>
+/**
+ * Object.create()
+ * 
+ * Creates a new object with specified prototype.
+ * More direct control over prototype chain.
+ */
+
+// Create object with specific prototype
+const animalProto = {
+    speak() {
+        console.log(`${this.name} makes a sound`);
+    },
+    sleep() {
+        console.log(`${this.name} is sleeping`);
+    }
+};
+
+const dog = Object.create(animalProto);
+dog.name = 'Dog';
+dog.speak();  // "Dog makes a sound"
+
+// Create object with no prototype
+const bareObject = Object.create(null);
+console.log(bareObject.toString);  // undefined (no Object.prototype!)
+
+// Factory function pattern
+function createAnimal(name) {
+    const animal = Object.create(animalProto);
+    animal.name = name;
+    return animal;
+}
+
+const cat = createAnimal('Cat');
+cat.speak();  // "Cat makes a sound"
+    </pre>
+
+    <h2>Prototype Methods</h2>
+    <pre>
+/**
+ * USEFUL PROTOTYPE METHODS
+ */
+
+const parent = { a: 1 };
+const child = Object.create(parent);
+child.b = 2;
+
+// Check if property is own (not inherited)
+console.log(child.hasOwnProperty('b'));  // true
+console.log(child.hasOwnProperty('a'));  // false
+
+// Check if object is in prototype chain
+console.log(parent.isPrototypeOf(child));  // true
+
+// Get prototype
+console.log(Object.getPrototypeOf(child) === parent);  // true
+
+// Set prototype (not recommended for performance)
+Object.setPrototypeOf(child, { c: 3 });
+
+// Get own property names
+console.log(Object.keys(child));  // ['b']
+console.log(Object.getOwnPropertyNames(child));  // ['b']
+
+// Check if property exists (own or inherited)
+console.log('a' in child);  // true (inherited)
+console.log('b' in child);  // true (own)
+
+// Iterate own properties only
+for (const key in child) {
+    if (child.hasOwnProperty(key)) {
+        console.log(key, child[key]);
+    }
+}
+    </pre>
+
+    <h2>Inheritance Patterns</h2>
+    <pre>
+/**
+ * INHERITANCE PATTERNS
+ */
+
+// 1. Prototypal Inheritance (Object.create)
+const animal = {
+    init(name) {
+        this.name = name;
+        return this;
+    },
+    speak() {
+        console.log(`${this.name} speaks`);
+    }
+};
+
+const dog = Object.create(animal).init('Dog');
+
+// 2. Constructor Inheritance (Pre-ES6)
+function Animal(name) {
+    this.name = name;
+}
+Animal.prototype.speak = function() {
+    console.log(`${this.name} speaks`);
+};
+
+function Dog(name, breed) {
+    Animal.call(this, name);  // Call parent constructor
+    this.breed = breed;
+}
+
+// Set up prototype chain
+Dog.prototype = Object.create(Animal.prototype);
+Dog.prototype.constructor = Dog;  // Fix constructor reference
+
+Dog.prototype.bark = function() {
+    console.log('Woof!');
+};
+
+// 3. ES6 Class Inheritance (Recommended)
+class Animal {
+    constructor(name) {
+        this.name = name;
+    }
+    speak() {
+        console.log(`${this.name} speaks`);
+    }
+}
+
+class Dog extends Animal {
+    constructor(name, breed) {
+        super(name);
+        this.breed = breed;
+    }
+    bark() {
+        console.log('Woof!');
+    }
+}
+
+// 4. Composition over Inheritance
+const canSpeak = {
+    speak() { console.log(`${this.name} speaks`); }
+};
+
+const canWalk = {
+    walk() { console.log(`${this.name} walks`); }
+};
+
+const canSwim = {
+    swim() { console.log(`${this.name} swims`); }
+};
+
+// Compose behaviors
+const duck = Object.assign(
+    { name: 'Duck' },
+    canSpeak,
+    canWalk,
+    canSwim
+);
+
+duck.speak();  // "Duck speaks"
+duck.swim();   // "Duck swims"
+    </pre>
+    <button onclick="runInheritance()">Run Example</button>
+    <div id="output3" class="output"></div>
+
+    <div class="tip">
+        <h3>🎤 Interview Questions</h3>
+        <ul>
+            <li><strong>What is the prototype chain?</strong> A chain of objects linked via __proto__, used for property lookup</li>
+            <li><strong>Difference between __proto__ and prototype?</strong> __proto__ is on instances, prototype is on constructor functions</li>
+            <li><strong>How does 'new' work?</strong> Creates object, sets prototype, calls constructor, returns object</li>
+            <li><strong>Are ES6 classes different from constructor functions?</strong> No, they're syntactic sugar over prototypes</li>
+            <li><strong>What is Object.create(null)?</strong> Creates object with no prototype (no inherited methods)</li>
+        </ul>
+    </div>
+
+    <script>
+        function log(outputId, ...args) {
+            const output = document.getElementById(outputId);
+            output.innerHTML += args.join(' ') + '\n';
+        }
+
+        function runConstructor() {
+            document.getElementById('output1').innerHTML = '';
+            
+            function Animal(name) {
+                this.name = name;
+            }
+            Animal.prototype.speak = function() {
+                return `${this.name} makes a sound`;
+            };
+            
+            const dog = new Animal('Dog');
+            const cat = new Animal('Cat');
+            
+            log('output1', dog.speak());
+            log('output1', cat.speak());
+            log('output1', 'Same method?', dog.speak === cat.speak);
+        }
+
+        function runClass() {
+            document.getElementById('output2').innerHTML = '';
+            
+            class Animal {
+                constructor(name) { this.name = name; }
+                speak() { return `${this.name} makes a sound`; }
+            }
+            
+            class Dog extends Animal {
+                constructor(name, breed) {
+                    super(name);
+                    this.breed = breed;
+                }
+                speak() { return `${this.name} barks`; }
+            }
+            
+            const dog = new Dog('Buddy', 'Golden');
+            log('output2', dog.speak());
+            log('output2', 'Breed:', dog.breed);
+            log('output2', 'Is Animal?', dog instanceof Animal);
+        }
+
+        function runInheritance() {
+            document.getElementById('output3').innerHTML = '';
+            
+            const canSpeak = { speak() { return `${this.name} speaks`; } };
+            const canSwim = { swim() { return `${this.name} swims`; } };
+            
+            const duck = Object.assign({ name: 'Duck' }, canSpeak, canSwim);
+            
+            log('output3', duck.speak());
+            log('output3', duck.swim());
+            log('output3', 'Composition over inheritance!');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "mongodb-advanced-operations",
+  "version": "1.0.0",
+  "description": "Advanced MongoDB operations and aggregation examples",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "seed": "node scripts/seedData.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "mongodb": "^5.7.0",
+    "mongoose": "^7.4.3",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.6.2"
+  }
+}

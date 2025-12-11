@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lazy Loading - Interview Prep</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            padding: 2rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #2c3e50; margin-bottom: 1rem; }
+        h2 { color: #34495e; margin: 2rem 0 1rem; border-bottom: 2px solid #3498db; padding-bottom: 0.5rem; }
+        h3 { color: #2980b9; margin: 1.5rem 0 0.5rem; }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .demo {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .tip {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .back-link { margin-bottom: 1rem; display: inline-block; }
+        .placeholder {
+            background: #e9ecef;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Index</a>
+    
+    <h1>🚀 Lazy Loading</h1>
+    <p>Techniques for deferring the loading of non-critical resources to improve performance.</p>
+
+    <!--
+    =========================================================================
+    LAZY LOADING - Overview
+    =========================================================================
+    
+    Lazy loading is a strategy to defer loading of resources until they're needed.
+    
+    BENEFITS:
+    - Faster initial page load
+    - Reduced bandwidth usage
+    - Better Core Web Vitals (LCP)
+    - Improved user experience
+    
+    WHAT CAN BE LAZY LOADED:
+    - Images
+    - Videos
+    - JavaScript modules
+    - React components
+    - Iframes
+    - Below-the-fold content
+    -->
+
+    <h2>1. Native Image Lazy Loading</h2>
+    <pre>
+/**
+ * NATIVE LAZY LOADING (Modern Browsers)
+ * 
+ * The simplest approach - just add loading="lazy" attribute.
+ * Supported in Chrome, Firefox, Edge, Safari 15.4+
+ */
+
+&lt;!-- Lazy load images --&gt;
+&lt;img 
+    src="image.jpg" 
+    alt="Description"
+    loading="lazy"
+    width="800"
+    height="600"
+&gt;
+
+&lt;!-- Lazy load iframes --&gt;
+&lt;iframe 
+    src="https://youtube.com/embed/..." 
+    loading="lazy"
+&gt;&lt;/iframe&gt;
+
+/**
+ * loading attribute values:
+ * - "lazy": Defer loading until near viewport
+ * - "eager": Load immediately (default)
+ * - "auto": Browser decides
+ */
+
+&lt;!-- DON'T lazy load above-the-fold images! --&gt;
+&lt;img src="hero.jpg" loading="eager"&gt;  &lt;!-- or omit loading --&gt;
+
+&lt;!-- DO lazy load below-the-fold images --&gt;
+&lt;img src="footer-image.jpg" loading="lazy"&gt;
+    </pre>
+
+    <div class="warning">
+        <strong>⚠️ Important:</strong> Always set width and height on lazy-loaded images to prevent layout shifts (CLS).
+    </div>
+
+    <h2>2. Intersection Observer API</h2>
+    <pre>
+/**
+ * INTERSECTION OBSERVER
+ * 
+ * For more control over lazy loading behavior.
+ * Works with any element, not just images.
+ */
+
+// Create observer
+const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const img = entry.target;
+            
+            // Load the actual image
+            img.src = img.dataset.src;
+            img.classList.remove('lazy');
+            
+            // Stop observing this element
+            observer.unobserve(img);
+        }
+    });
+}, {
+    // Options
+    root: null,           // Use viewport as root
+    rootMargin: '50px',   // Load 50px before entering viewport
+    threshold: 0.1        // Trigger when 10% visible
+});
+
+// Observe all lazy images
+document.querySelectorAll('img.lazy').forEach(img => {
+    observer.observe(img);
+});
+
+/**
+ * HTML structure:
+ * &lt;img class="lazy" data-src="actual-image.jpg" src="placeholder.jpg"&gt;
+ */
+    </pre>
+
+    <h3>Complete Lazy Loading Class</h3>
+    <pre>
+/**
+ * REUSABLE LAZY LOADER CLASS
+ */
+
+class LazyLoader {
+    constructor(options = {}) {
+        this.options = {
+            rootMargin: options.rootMargin || '50px',
+            threshold: options.threshold || 0.1,
+            selector: options.selector || '[data-lazy]'
+        };
+        
+        this.observer = null;
+        this.init();
+    }
+    
+    init() {
+        // Check for Intersection Observer support
+        if (!('IntersectionObserver' in window)) {
+            this.loadAllImmediately();
+            return;
+        }
+        
+        this.observer = new IntersectionObserver(
+            this.handleIntersection.bind(this),
+            {
+                rootMargin: this.options.rootMargin,
+                threshold: this.options.threshold
+            }
+        );
+        
+        this.observe();
+    }
+    
+    observe() {
+        const elements = document.querySelectorAll(this.options.selector);
+        elements.forEach(el => this.observer.observe(el));
+    }
+    
+    handleIntersection(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                this.loadElement(entry.target);
+                this.observer.unobserve(entry.target);
+            }
+        });
+    }
+    
+    loadElement(element) {
+        const src = element.dataset.src;
+        const srcset = element.dataset.srcset;
+        
+        if (element.tagName === 'IMG') {
+            if (src) element.src = src;
+            if (srcset) element.srcset = srcset;
+        } else if (element.tagName === 'IFRAME') {
+            element.src = src;
+        } else {
+            // Background image
+            element.style.backgroundImage = `url(${src})`;
+        }
+        
+        element.classList.add('loaded');
+        element.removeAttribute('data-lazy');
+    }
+    
+    loadAllImmediately() {
+        const elements = document.querySelectorAll(this.options.selector);
+        elements.forEach(el => this.loadElement(el));
+    }
+    
+    destroy() {
+        if (this.observer) {
+            this.observer.disconnect();
+        }
+    }
+}
+
+// Usage
+const lazyLoader = new LazyLoader({
+    rootMargin: '100px',
+    threshold: 0.1
+});
+    </pre>
+
+    <h2>3. React Lazy Loading</h2>
+    <pre>
+/**
+ * REACT COMPONENT LAZY LOADING
+ * 
+ * Use React.lazy() and Suspense for code splitting.
+ */
+
+import React, { Suspense, lazy } from 'react';
+
+// Lazy load components
+const HeavyComponent = lazy(() => import('./HeavyComponent'));
+const Dashboard = lazy(() => import('./Dashboard'));
+
+function App() {
+    return (
+        &lt;Suspense fallback={&lt;div&gt;Loading...&lt;/div&gt;}&gt;
+            &lt;HeavyComponent /&gt;
+        &lt;/Suspense&gt;
+    );
+}
+
+/**
+ * ROUTE-BASED CODE SPLITTING
+ */
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+const Home = lazy(() => import('./pages/Home'));
+const About = lazy(() => import('./pages/About'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+
+function App() {
+    return (
+        &lt;BrowserRouter&gt;
+            &lt;Suspense fallback={&lt;LoadingSpinner /&gt;}&gt;
+                &lt;Routes&gt;
+                    &lt;Route path="/" element={&lt;Home /&gt;} /&gt;
+                    &lt;Route path="/about" element={&lt;About /&gt;} /&gt;
+                    &lt;Route path="/dashboard" element={&lt;Dashboard /&gt;} /&gt;
+                &lt;/Routes&gt;
+            &lt;/Suspense&gt;
+        &lt;/BrowserRouter&gt;
+    );
+}
+
+/**
+ * LAZY LOAD WITH NAMED EXPORTS
+ */
+const MyComponent = lazy(() => 
+    import('./MyModule').then(module => ({ default: module.MyComponent }))
+);
+
+/**
+ * PRELOAD ON HOVER (Better UX)
+ */
+const Dashboard = lazy(() => import('./Dashboard'));
+
+function NavLink() {
+    const preloadDashboard = () => {
+        import('./Dashboard');  // Start loading on hover
+    };
+    
+    return (
+        &lt;Link 
+            to="/dashboard" 
+            onMouseEnter={preloadDashboard}
+        &gt;
+            Dashboard
+        &lt;/Link&gt;
+    );
+}
+    </pre>
+
+    <h2>4. Image Lazy Loading with Blur Placeholder</h2>
+    <pre>
+/**
+ * BLUR-UP TECHNIQUE (Like Medium.com)
+ * 
+ * Show a tiny blurred placeholder, then load full image.
+ */
+
+/* CSS */
+.lazy-image-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.lazy-image {
+    width: 100%;
+    height: auto;
+    transition: opacity 0.3s ease;
+}
+
+.lazy-image.loading {
+    opacity: 0;
+}
+
+.lazy-image.loaded {
+    opacity: 1;
+}
+
+.placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    filter: blur(20px);
+    transform: scale(1.1);
+    transition: opacity 0.3s ease;
+}
+
+.placeholder.hidden {
+    opacity: 0;
+}
+
+/* JavaScript */
+function lazyLoadWithBlur(container) {
+    const img = container.querySelector('.lazy-image');
+    const placeholder = container.querySelector('.placeholder');
+    
+    const fullSrc = img.dataset.src;
+    
+    // Create new image to preload
+    const preloadImg = new Image();
+    preloadImg.src = fullSrc;
+    
+    preloadImg.onload = () => {
+        img.src = fullSrc;
+        img.classList.remove('loading');
+        img.classList.add('loaded');
+        placeholder.classList.add('hidden');
+    };
+}
+
+/* HTML */
+&lt;div class="lazy-image-container"&gt;
+    &lt;img 
+        class="placeholder" 
+        src="tiny-placeholder.jpg" 
+        alt=""
+    &gt;
+    &lt;img 
+        class="lazy-image loading" 
+        data-src="full-image.jpg"
+        alt="Description"
+    &gt;
+&lt;/div&gt;
+    </pre>
+
+    <h2>5. Dynamic Import for JavaScript</h2>
+    <pre>
+/**
+ * DYNAMIC IMPORTS
+ * 
+ * Load JavaScript modules on demand.
+ */
+
+// Load module when needed
+async function loadChartLibrary() {
+    const { Chart } = await import('chart.js');
+    return new Chart(/* ... */);
+}
+
+// Load on user action
+button.addEventListener('click', async () => {
+    const { heavyFunction } = await import('./heavyModule.js');
+    heavyFunction();
+});
+
+// Conditional loading
+async function loadPolyfill() {
+    if (!('IntersectionObserver' in window)) {
+        await import('intersection-observer-polyfill');
+    }
+}
+
+// Load based on feature detection
+async function initEditor() {
+    if (userWantsRichEditor) {
+        const { Editor } = await import('./RichTextEditor');
+        return new Editor();
+    } else {
+        return document.createElement('textarea');
+    }
+}
+
+/**
+ * WEBPACK MAGIC COMMENTS
+ */
+
+// Named chunks for better debugging
+const module = await import(/* webpackChunkName: "my-chunk" */ './module');
+
+// Prefetch (load in idle time)
+const module = await import(/* webpackPrefetch: true */ './module');
+
+// Preload (load in parallel)
+const module = await import(/* webpackPreload: true */ './module');
+    </pre>
+
+    <h2>6. Infinite Scroll with Lazy Loading</h2>
+    <pre>
+/**
+ * INFINITE SCROLL IMPLEMENTATION
+ */
+
+class InfiniteScroll {
+    constructor(options) {
+        this.container = options.container;
+        this.loadMore = options.loadMore;
+        this.threshold = options.threshold || 100;
+        this.loading = false;
+        
+        this.init();
+    }
+    
+    init() {
+        // Use Intersection Observer for better performance
+        const sentinel = document.createElement('div');
+        sentinel.className = 'scroll-sentinel';
+        this.container.appendChild(sentinel);
+        
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !this.loading) {
+                    this.load();
+                }
+            },
+            { rootMargin: `${this.threshold}px` }
+        );
+        
+        observer.observe(sentinel);
+    }
+    
+    async load() {
+        this.loading = true;
+        this.showLoader();
+        
+        try {
+            const newItems = await this.loadMore();
+            this.appendItems(newItems);
+        } catch (error) {
+            console.error('Failed to load more items:', error);
+        } finally {
+            this.loading = false;
+            this.hideLoader();
+        }
+    }
+    
+    appendItems(items) {
+        const fragment = document.createDocumentFragment();
+        items.forEach(item => {
+            const el = this.createItemElement(item);
+            fragment.appendChild(el);
+        });
+        this.container.insertBefore(fragment, this.container.lastChild);
+    }
+    
+    showLoader() { /* ... */ }
+    hideLoader() { /* ... */ }
+    createItemElement(item) { /* ... */ }
+}
+
+// Usage
+const infiniteScroll = new InfiniteScroll({
+    container: document.querySelector('.items-container'),
+    loadMore: async () => {
+        const response = await fetch(`/api/items?page=${currentPage++}`);
+        return response.json();
+    },
+    threshold: 200
+});
+    </pre>
+
+    <div class="tip">
+        <h3>🎤 Interview Questions</h3>
+        <ul>
+            <li><strong>What is lazy loading?</strong> Deferring resource loading until needed to improve initial page load</li>
+            <li><strong>Native vs JS lazy loading?</strong> Native uses loading="lazy", JS uses Intersection Observer for more control</li>
+            <li><strong>How does React.lazy work?</strong> Dynamic import that returns a Promise, used with Suspense for fallback</li>
+            <li><strong>What is code splitting?</strong> Breaking code into chunks loaded on demand, reducing initial bundle size</li>
+            <li><strong>How to prevent CLS with lazy images?</strong> Always set width/height or use aspect-ratio</li>
+        </ul>
+    </div>
+
+    <h2>Live Demo</h2>
+    <div class="demo">
+        <p>Scroll down to see lazy-loaded images:</p>
+        <div class="placeholder" data-lazy data-src="https://picsum.photos/800/400?1">Loading image 1...</div>
+        <div class="placeholder" data-lazy data-src="https://picsum.photos/800/400?2">Loading image 2...</div>
+        <div class="placeholder" data-lazy data-src="https://picsum.photos/800/400?3">Loading image 3...</div>
+    </div>
+
+    <script>
+        // Simple lazy loading demo
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    const src = el.dataset.src;
+                    el.innerHTML = `<img src="${src}" style="width:100%;border-radius:8px;" alt="Lazy loaded">`;
+                    el.style.height = 'auto';
+                    observer.unobserve(el);
+                }
+            });
+        }, { rootMargin: '50px' });
+
+        document.querySelectorAll('[data-lazy]').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
