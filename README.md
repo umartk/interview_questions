@@ -16,7 +16,7 @@ This repository contains comprehensive practice projects covering all aspects of
 └── html/           # HTML, CSS, JavaScript fundamentals
 ```
 
-## 🔑 Key Topics Covered
+## 🔑 Key Topics Covered 
 
 ### Node.js (`/node`)
 - ✅ Clustering for multi-core utilization
